@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <!-- <title>Happy Money</title>s -->
+    <object th:include="fragments/head :: head" th:remove="tag"></object>
+
+<!--    <link th:href="@{/assets/pages/css/profile.min.css}" rel="stylesheet" type="text/css" />-->
+</head>
+
+<body class="page-container-bg-solid" id="loadPage">
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+
+
+<!--<link href="https://datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />-->
+<!--<script src="https://datatables.net/download/build/nightly/jquery.dataTables.js"></script>-->
+<!--<script src="https://code.highcharts.com/highcharts.js"></script>-->
+<div th:include="fragments/topmenuheader :: header"></div>
+<!-- <nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <img src="images/hm.png" alt="" width="30" height="30" class="d-inline-block align-text-top">
+        Happy Money
+      </a>
+    </div>
+</nav>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Production Observability</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#">Dashboard</a>
+            </li>
+        </ul>
+        </div>
+    </div>
+</nav> -->
+
+
+  <div class="container-fluid page-body-wrapper" id="dashboard">
+    <div class= "row">
+        <div class="form-group">
+            <div style="margin: 10px; width: 100%;">
+            From<input id="fromdt" type="datetime-local"  />
+            <input id="myCheck" type="checkbox" />
+            To<input id="todt" type="datetime-local" />
+            <a id="myLink" title="Click to do something"
+               href="#" onclick="loadPage()">Load</a>
+        
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-3" style="height: 60%;">
+            <div class="card h-100">
+                <div class="card-header">
+                    <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
+                    Funnel page
+                </div>
+                <div class="card-body">
+                    <div id="salesByType" style="width:100%; height:100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="tablecontent" style="display:none">
+        <div class="col-md-12 mb-3">
+          <div class="card">
+            <div class="card-header">
+              <span id="tablename"><i class="bi bi-table me-2"></i></span> 
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table
+                id="example"
+                class="table table-striped data-table"
+                style="width: 100%"
+              >
+                <!-- <thead>
+                  <tr>
+                    <th>evetTime</th>
+                    <th>lead_guid</th>
+                    <th>datadog link</th>
+                    <th>fullstory link</th>
+                  
+                  </tr>
+                </thead> -->
+                </table>
+                  
+               
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+
+
+
+<div th:include="fragments/homefooter :: footer"></div>
+<script th:inline="javascript">
+        /*<![CDATA[*/
+
+            var totime = new Date([[${todt}]]);
+            var fromtime = new Date([[${fromdt}]]);
+            totime.setMinutes(totime.getMinutes() - totime.getTimezoneOffset());
+            fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
+            document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
+            document.getElementById('todt').value = totime.toISOString().slice(0,16);   
+
+
+            function loadPage(){ 
+                var oldWord = "T";
+                var fromdate = new Date(document.getElementById('fromdt').value);
+                var todate = new Date(document.getElementById('todt').value);
+               
+                $.ajax({
+                    type : "GET",
+                    url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate),
+                    contentType: "application/json",
+                    dataType: "html",
+                    success: function(data) {
+                        alert(data);        
+                        $('#dashboard').change(data);
+                    }
+                });
+
+            }
+
+            var yourCheckbox = document.querySelector('#myCheck');
+            var yourDateField = document.querySelector('#todt');
+
+            // This function will update the date field's enabled/disabled
+            // attribute, depending on if the yourCheckbox is checked
+            function updateYourDateField() {
+                
+                if(yourCheckbox.checked) {
+                yourDateField.disabled = false;
+                }
+                else {
+                yourDateField.disabled = true;
+                }
+            }
+            
+            // Add an event listener to the change event, that causes
+            // the date field to be enabled/disabled when ever the checkbox
+            // is clicked and the value changes
+            yourCheckbox.addEventListener('change', function() {
+                
+                updateYourDateField();
+            })
+ 
+            // Call this to ensure your date field is in correct state
+            // when the script is first run
+            updateYourDateField();
+
+            $(function () {
+                Highcharts.setOptions({
+                    lang: {
+                        decimalPoint: '.',
+                        thousandsSep: ','
+                    }
+                });
+
+                drawSalesByTypeChart();
+            });
+
+            // sconst charts = document.querySelectorAll(".chart");
+
+            function tableFromJson(data, profilePage) {
+
+                var tablecontent = document.getElementById("tablecontent");
+
+                var fromdate = new Date(document.getElementById('fromdt').value);
+                var todate = new Date(document.getElementById('todt').value);
+
+                if (tablecontent.style.display === "none") {
+                    tablecontent.style.display = "block";
+                }
+
+                var divShowData = document.getElementById('tablename');
+                // var innerhtmlVal = divShowData.innerHTML.concat(profilePage);
+                // alert(innerhtmlVal);
+                divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(profilePage);
+                
+                // $("#example").dataTable().fnDestroy();
+                var cols = [];
+
+                for (var i = 0; i < data.length; i++) {
+                    var datadoglink = ' <a href="/test?leaduid='+ data[i]['lead_guid']  +'" target="_blank"" >DataDog logs for this lead</a>';
+                    var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'" target="_blank"" >Latest FullStory session</a>';
+                    var date = new Date(data[i]["eventTime"]);
+
+                    data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
+                    data[i]["datadog link"] = datadoglink;
+                    data[i]["fullstory link"] = fullstorylink;
+                }
+                
+                var exampleRecord = data[0];
+                
+                //get keys in object. This will only work if your statement remains true that all objects have identical keys
+                var keys = Object.keys(exampleRecord);
+                
+                //for each key, add a column definition
+                keys.forEach(function(k) {
+                    cols.push({
+                    title: k,
+                    data: k
+                    //optionally do some type detection here for render function
+                    });
+                });
+                
+                //initialize DataTables
+                var table = $('#example').DataTable({
+                    destroy: true,
+                    columns: cols
+                });
+                table.clear();
+                
+                //add data and draw
+                table.rows.add(data).draw();
+                
+            }
+
+
+            function drawSalesByTypeChart() {
+                var simpleJsonObject =[[${simpleJsonObject}]];
+                var salesByTypeChart = Highcharts.chart('salesByType', {
+                    chart: {
+                        type: 'column',
+                        margin: 75,
+                        height: 400,
+                    },
+                    title: {
+                        text: ''
+                    },
+                  
+                    plotOptions: {
+                        series: {
+                            cursor: 'pointer',
+                            point: {
+                                events: {
+                                    click: function () {
+                                        tableFromJson(simpleJsonObject[this.category], this.category);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    xAxis: {
+                        categories: [[${pageNames}]],
+
+                        labels: {
+                            formatter: function() {
+                                var ret = this.value,
+                                    len = ret.length;
+                              
+                              if( len > 10 ) {
+                                ret = ret.slice(0,10) + '<br/>' + ret.slice(10, len);
+                              }
+
+                              if( len > 25 ) {
+                                ret = ret.slice(0,25) + '...';
+                              }
+                            return ret;
+                            }
+                          },
+                        tickmarkPlacement:'on',
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'number of Leads',
+                            align: 'high'
+                        },
+                        labels: {
+                            overflow: 'justify'
+                        }
+                    },
+
+                    // series: [[${seriesDataArray}]],
+                    series: [{
+                        name: 'Funnel Landing Page',
+                        data: [[${counterValue}]],
+                        color: '#BCE2C7',
+                        states: {
+                            select: {
+                                color: '#2771B8'
+                            }
+                        },
+                        allowPointSelect: true
+                    }]
+
+
+
+                });
+            }
+
+            /*]]>*/
+        </script>
+
+</body>
+</html>

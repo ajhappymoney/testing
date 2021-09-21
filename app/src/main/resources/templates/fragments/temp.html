@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!--<![endif]-->
+
+<head>
+    <title>Happy Money</title>
+    <link href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" type="text/css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+
+    <object th:include="fragments/head :: head" th:remove="tag"></object>
+
+    <link th:href="@{/assets/pages/css/profile.min.css}" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div th:include="fragments/topmenuheader :: header"></div>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
+<!--<script th:src="@{/assets/pages/scripts/loadTable.js}"></script>-->
+<div class="page-container">
+    <div class="page-content-wrappe r">
+        <div class="page-head" style="background-color:#eff3f8">
+            <div class="container" >
+                <div class="row" style="margin-bottom:10px">
+                    <div class="col-md-6">
+                        <h3>EP Observability tool</h3>
+                    </div>
+                </div>
+                <div style="margin-bottom:10px; margin-left:5px; width: 100%;">
+                    From<input id="fromdt" type="datetime-local" />
+                    <input id="myCheck" type="checkbox" />
+                    To<input id="todt" type="datetime-local" />
+                    <a id="myLink" title="Click to do something"
+                       href="#" onclick="loadPage()">Load</a>
+                </div>
+                <div class="row" style="margin-bottom:10px">
+
+                    <div class="col-md-6">
+                        <div id="salesByType" style="width:100%; height:600px;"></div>
+                    </div>
+                    <!--                            <div class="col-md-6" style="margin-top:20px">-->
+                    <!--                                <div id="salesByRegion" style="width:100%; height:400px;"></div>-->
+                    <!--                            </div>-->
+
+
+                    <p id='showData'></p>
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:include="fragments/homefooter :: footer"></div>
+<script th:inline="javascript">
+        /*<![CDATA[*/
+
+            var totime = new Date();
+            var fromtime = new Date();
+            totime.setMinutes(totime.getMinutes() - totime.getTimezoneOffset());
+            fromtime.setMinutes(totime.getMinutes() - 60 - totime.getTimezoneOffset());
+            document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
+            document.getElementById('todt').value = totime.toISOString().slice(0,16);
+
+            $('#myLink').click(function(){
+                var fromdate = document.getElementById('fromdt').value;
+                var todate = document.getElementById('todt').value;
+
+
+            });
+
+            var yourCheckbox = document.querySelector('#myCheck');
+            var yourDateField = document.querySelector('#todt');
+
+            // This function will update the date field's enabled/disabled
+            // attribute, depending on if the yourCheckbox is checked
+            function updateYourDateField() {
+
+                if(yourCheckbox.checked) {
+                yourDateField.disabled = false;
+                }
+                else {
+                yourDateField.disabled = true;
+                }
+            }
+
+            // Add an event listener to the change event, that causes
+            // the date field to be enabled/disabled when ever the checkbox
+            // is clicked and the value changes
+            yourCheckbox.addEventListener('change', function() {
+
+                updateYourDateField();
+            })
+
+            // Call this to ensure your date field is in correct state
+            // when the script is first run
+            updateYourDateField();
+
+            $(function () {
+                Highcharts.setOptions({
+                    lang: {
+                        decimalPoint: '.',
+                        thousandsSep: ','
+                    }
+                });
+
+                drawSalesByTypeChart();
+            });
+
+            function tableFromJson(myBooks, profilePage) {
+                // the json data. (you can change the values for output.)
+                    var col = [];
+
+                    for (var i = 0; i < myBooks.length; i++) {
+                        for (var key in myBooks[i]) {
+                            if (col.indexOf(key) === -1) {
+                                col.push(key);
+                            }
+                        }
+                    }
+                    col.push("datadog link");
+                    col.push("fullstory link");
+
+                    // Create a table.
+                    var table = document.createElement("table");
+                    // table.setAttribute("class", "border_class");
+
+
+                    // Create table header row using the extracted headers above.
+                    var tr = table.insertRow(-1);                   // table row.
+
+                    for (var i = 0; i < col.length; i++) {
+                        var th = document.createElement("th");      // table header.
+                        var className = "column"+(i+1);
+                        th.setAttribute("class", className);
+                        th.innerHTML = col[i];
+                        tr.appendChild(th);
+                    }
+
+                    // add json data to the table as rows.
+                    for (var i = 0; i < myBooks.length; i++) {
+
+                        tr = table.insertRow(-1);
+
+                        for (var j = 0; j < col.length; j++) {
+                            if (col[j] === "datadog link")
+                            {
+                                var tabCell = tr.insertCell(-1);
+                                tabCell.innerHTML = ' <a href="/test?leaduid='+ myBooks[i][col[0]]  +'" target="frame1" >DataDog logs</a>';
+                            }else if (col[j] === "fullstory link"){
+                                var tabCell = tr.insertCell(-1);
+                                tabCell.innerHTML = ' <a href="/fullstory?leaduid='+ myBooks[i][col[0]]  +'" target="frame1" >Latest FullStory session</a>';
+                            }else if(col[j] === "eventTime"){
+                                var date = new Date(myBooks[i][col[j]]);
+                                alert(date);
+                                var tabCell = tr.insertCell(-1);
+                                tabCell.innerHTML = date;
+                                console.log(date.getTime())
+                            }
+                            else{
+                                var tabCell = tr.insertCell(-1);
+                                tabCell.innerHTML = myBooks[i][col[j]];
+                            }
+                        }
+                    }
+
+                    // Now, add the newly created table with json data, to a container.
+                    var divShowData = document.getElementById('showData');
+                    divShowData.innerHTML = "<h4>"+profilePage+"</h4><br>";
+                    divShowData.appendChild(table);
+            }
+
+
+            function drawSalesByTypeChart() {
+                var simpleJsonObject =[[${simpleJsonObject}]];
+                var salesByTypeChart = Highcharts.chart('salesByType', {
+                    chart: {
+                        type: 'column',
+                        margin: 75,
+                        height: 500,
+                    },
+                    title: {
+                        text: 'profile page'
+                    },
+                    plotOptions: {
+                        series: {
+                            cursor: 'pointer',
+                            point: {
+                                events: {
+                                    click: function () {
+                                        tableFromJson(simpleJsonObject[this.category], this.category);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    xAxis: {
+                        categories: [[${pageNames}]],
+
+                        labels: {
+                            formatter: function() {
+                                var ret = this.value,
+                                    len = ret.length;
+                              console.log(len);
+                              if( len > 10 ) {
+                                ret = ret.slice(0,10) + '<br/>' + ret.slice(10, len);
+                              }
+
+                              if( len > 25 ) {
+                                ret = ret.slice(0,25) + '...';
+                              }
+
+                              console.log(ret);
+                                return ret;
+                            }
+                          },
+                        tickmarkPlacement:'on',
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'number of Leads',
+                            align: 'high'
+                        },
+                        labels: {
+                            overflow: 'justify'
+                        }
+                    },
+
+                    series: [[${seriesDataArray}]],
+
+
+
+                });
+            }
+
+            /*]]>*/
+        </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+spring:
+  devtools:
+    livereload:
+      enabled: false #Set false to disable live reload
+
+fullstory:
+  token: FULLSTORY_TOKEN
+
+datadog:
+  key:
+    api: DATADOG_KEY_API
+    application: DATADOG_KEY_APPLICATION
+  site: DATADOG_SITE
+
+
+
+# Spring Actuator: features to help monitor and manage your application
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, loggers
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
+    loggers:
+      enabled: true
+  health:
+    mongo:
+      enabled: false
+  info:
+    git:
+      mode: full # to display the full git information (i.e. the full content of git.properties),
+

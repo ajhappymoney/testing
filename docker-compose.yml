@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  production-observability:
+    build: .
+    image: happymoney/production-observability
+    ports:
+      - "8080:8080"
