@@ -7,9 +7,10 @@ fullstory:
   token: FULLSTORY_TOKEN
 
 datadog:
-  key:
-    api: DATADOG_KEY_API
-    application: DATADOG_KEY_APPLICATION
+  api:
+    key: DATADOG_API_KEY
+  application:
+    key: DATADOG_APPLICATION_KEY
   site: DATADOG_SITE
 
 

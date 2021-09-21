@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 @Configuration
 public class DatadogHelper {
 
-    @Value("${datadog.key.api}")
+    @Value("${datadog.api.key}")
     private String datadogApiKey;
 
-    @Value("${datadog.key.application}")
+    @Value("${datadog.application.key}")
     private String datadogApplicationKey;
 
     @Value("${datadog.site}")
