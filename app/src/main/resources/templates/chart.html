@@ -2,49 +2,12 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <!-- <title>Happy Money</title>s -->
     <object th:include="fragments/head :: head" th:remove="tag"></object>
-
-<!--    <link th:href="@{/assets/pages/css/profile.min.css}" rel="stylesheet" type="text/css" />-->
 </head>
 
 <body class="page-container-bg-solid" id="loadPage">
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/drilldown.js"></script>
-<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-
-
-<!--<link href="https://datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />-->
-<!--<script src="https://datatables.net/download/build/nightly/jquery.dataTables.js"></script>-->
-<!--<script src="https://code.highcharts.com/highcharts.js"></script>-->
 <div th:include="fragments/topmenuheader :: header"></div>
-<!-- <nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="images/hm.png" alt="" width="30" height="30" class="d-inline-block align-text-top">
-        Happy Money
-      </a>
-    </div>
-</nav>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">Production Observability</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#">Dashboard</a>
-            </li>
-        </ul>
-        </div>
-    </div>
-</nav> -->
-
-
-  <div class="container-fluid page-body-wrapper" id="dashboard">
+  <div class="container-fluid page-body-wrapper">
     <div class= "row">
         <div class="form-group">
             <div style="margin: 10px; width: 100%;">
@@ -106,7 +69,7 @@
 
 
 
-<div th:include="fragments/homefooter :: footer"></div>
+<!-- <div th:include="fragments/homefooter :: footer"></div>s -->
 <script th:inline="javascript">
         /*<![CDATA[*/
 
@@ -122,17 +85,26 @@
                 var oldWord = "T";
                 var fromdate = new Date(document.getElementById('fromdt').value);
                 var todate = new Date(document.getElementById('todt').value);
-               
-                $.ajax({
-                    type : "GET",
-                    url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate),
-                    contentType: "application/json",
-                    dataType: "html",
-                    success: function(data) {
-                        alert(data);        
-                        $('#dashboard').change(data);
-                    }
-                });
+
+                // var yourCheckbox = document.querySelector('#myCheck');
+                // if(yourCheckbox.checked){
+                //     var todate = new Date();
+                //     alert("to date is set to current time "+todate);
+                // }
+
+                if(fromdate>todate){
+                    alert("Please select proper from and to date");
+                }else{
+                    $.ajax({
+                        type : "GET",
+                        url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate),
+                        contentType: "application/json",
+                        dataType: "html",
+                        success: function(data) {     
+                            $("body").html(data);
+                        }
+                    });
+                }
 
             }
 
