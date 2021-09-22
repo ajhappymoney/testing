@@ -9,6 +9,7 @@ import com.datadog.api.v2.client.model.LogAttributes;
 import com.datadog.api.v2.client.model.LogsListResponse;
 import com.datadog.api.v2.client.model.LogsSort;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.happymoney.productionobservability.helper.SortDataHelper;
 import com.happymoney.productionobservability.model.TableResponse;
@@ -44,7 +45,7 @@ public class DatadogAdaptor {
         HashMap<Integer, HashMap<String, Object>> beforeSort = new HashMap<Integer, HashMap<String, Object>>();
 
         TableResponse tableResponse = new TableResponse();
-
+        //datadogConnectionAdaptor = new DatadogConnectionAdaptor();
         ApiClient datadogClient = datadogConnectionAdaptor.getDatadogApiClient();
         if(!(datadogClient==null)) {
             LogsApi apiInstance = new LogsApi(datadogClient);
@@ -78,6 +79,7 @@ public class DatadogAdaptor {
                     HashMap<String, Object> profileInfo = new HashMap<>();
                     HashMap<String, Object> tempData = new HashMap<String, Object>();
                     tempData.put("lead_guid", leadGUid);
+                    tempData.put("member_id", "");
                     tempData.put("eventTime", eventTime);
 
                     HashMap<String, HashMap<String, Object>> tempHashMap = new HashMap<String, HashMap<String, Object>>();
@@ -104,6 +106,7 @@ public class DatadogAdaptor {
                         }
                     }
                 }
+
                 charData = sortDataHelper.getSortedData(beforeSort);
 
 
@@ -112,6 +115,41 @@ public class DatadogAdaptor {
                 System.err.println("Status code: " + e.getCode());
                 System.err.println("Reason: " + e.getResponseBody());
                 System.err.println("Response headers: " + e.getResponseHeaders());
+                e.printStackTrace();
+            }
+            try {
+                Set<String> keys = charData.keySet();
+                JsonObject section;
+                String guids2 = "";
+                Set<String> total = new HashSet<String>();
+                for (String key :
+                        keys) {
+                    section = charData.getAsJsonObject(key);
+                    JsonArray array = section.get("resultAttributes").getAsJsonArray();
+                    for (int i = 0; i < array.size(); i++) {
+                        total.add(array.get(i).getAsJsonObject().get("lead_guid").getAsString());
+                    }
+
+                }
+                for (String guid :
+                        total) {
+                    guids2 += guid + " OR ";
+                }
+                guids2 = guids2.substring(0, guids2.length() - 4);
+                JsonObject members = getMemberId(fromDate, toDate, guids2);
+                for (String key :
+                        keys) {
+                    section = charData.getAsJsonObject(key);
+                    JsonArray array = section.get("resultAttributes").getAsJsonArray();
+                    for (int j = 0; j < array.size(); j++) {
+                        if(members.get(array.get(j).getAsJsonObject().get("lead_guid").getAsString()) != null) {
+                            array.get(j).getAsJsonObject().addProperty("member_id", members.get(array.get(j).getAsJsonObject().get("lead_guid").getAsString()).getAsString());
+                        }
+                    }
+
+                }
+
+            }catch (Exception e){
                 e.printStackTrace();
             }
             return charData;
@@ -156,6 +194,43 @@ public class DatadogAdaptor {
                 System.err.println("Response headers: " + e.getResponseHeaders());
                 e.printStackTrace();
             }
+        }
+        return null;
+    }
+
+    public JsonObject getMemberId(OffsetDateTime fromDate, OffsetDateTime toDate, String guids){
+
+        JsonObject charData = new JsonObject();
+        HashMap<Integer, HashMap<String, Object>> beforeSort = new HashMap<Integer, HashMap<String, Object>>();
+
+        ApiClient datadogClient = datadogConnectionAdaptor.getDatadogApiClient();
+        if(!(datadogClient==null)) {
+            LogsApi apiInstance = new LogsApi(datadogClient);
+            String filterQuery = "service:doppio-apply task_family:*prod @scrubbedMsgLogCopy.member_id:* (" + guids + ")";
+            LogsSort sort = LogsSort.fromValue("timestamp"); // LogsSort | Order of logs in results.
+            String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
+            Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
+            try {
+                LogsListResponse result = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
+                        .filterQuery(filterQuery)
+                        .filterFrom(fromDate.minusDays(15))
+                        .filterTo(OffsetDateTime.now())
+                        .sort(sort)
+                        .pageLimit(pageLimit));
+                for (Log logmodel :
+                        result.getData()) {
+                    HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
+                    logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes().get("scrubbedMsgLogCopy");
+                    String leadGUid = (String) logAttributesHashMap.get("lead_guid");
+                    String memberId = logAttributesHashMap.get("member_id").toString();
+                    if(leadGUid == null || memberId == null || charData.has(leadGUid)) continue;
+                    charData.addProperty(leadGUid, memberId);
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return charData;
         }
         return null;
     }

@@ -16,10 +16,12 @@ public class FullStoryAdapter {
 
     @Autowired
     private FullStoryHelper fullStoryHelper;
+    @Autowired
+    private DatadogAdaptor dd;
 
     public String getSession(String guid){
         try{
-            DatadogAdaptor dd = new DatadogAdaptor();
+            //DatadogAdaptor dd = new DatadogAdaptor();
             int memberId = dd.getMemberId(guid);
             ResponseEntity<Object> status = exchangeRest("/api/v1/sessions?uid=" + memberId);
             ArrayList<LinkedHashMap> sessions = (ArrayList<LinkedHashMap>)status.getBody();
