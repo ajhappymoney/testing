@@ -78,7 +78,7 @@ public class DatadogAdaptor {
                     HashMap<String, Object> profileInfo = new HashMap<>();
                     HashMap<String, Object> tempData = new HashMap<String, Object>();
                     tempData.put("lead_guid", leadGUid);
-                    tempData.put("member_id", "");
+                    tempData.put("member_id", "1");
                     tempData.put("eventTime", eventTime);
                     if(recentEvets.containsKey(page)){
                         HashMap<String, Long> leadEvents = recentEvets.get(page);
@@ -160,12 +160,13 @@ public class DatadogAdaptor {
                     section = charData.getAsJsonObject(key);
                     JsonArray array = section.get("resultAttributes").getAsJsonArray();
                     for (int i = 0; i < array.size(); i++) {
-                        total.add(array.get(i).getAsJsonObject().get("lead_guid").getAsString());
+                        if(array.get(i).getAsJsonObject().get("lead_guid") != null) total.add(array.get(i).getAsJsonObject().get("lead_guid").getAsString());
                     }
 
                 }
                 for (String guid :
                         total) {
+                    if(guid.length()<10) continue;
                     guids2 += guid + " OR ";
                 }
                 guids2 = guids2.substring(0, guids2.length() - 4);
@@ -175,8 +176,10 @@ public class DatadogAdaptor {
                     section = charData.getAsJsonObject(key);
                     JsonArray array = section.get("resultAttributes").getAsJsonArray();
                     for (int j = 0; j < array.size(); j++) {
-                        if(members.get(array.get(j).getAsJsonObject().get("lead_guid").getAsString()) != null) {
+                        if(array.get(j).getAsJsonObject().get("lead_guid") != null && members.get(array.get(j).getAsJsonObject().get("lead_guid").getAsString()) != null) {
                             array.get(j).getAsJsonObject().addProperty("member_id", members.get(array.get(j).getAsJsonObject().get("lead_guid").getAsString()).getAsString());
+                        } else{
+                            array.get(j).getAsJsonObject().addProperty("member_id", "");
                         }
                     }
 
