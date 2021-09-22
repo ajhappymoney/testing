@@ -37,8 +37,7 @@ public class DatadogAdaptor {
 
         Map<String,Integer> auto = sortDataHelper.getPriorityMap();
         Gson gson = new Gson();
-        MultiKeyMap multiKeyMap = MultiKeyMap.multiKeyMap(new LinkedMap());
-
+        HashMap<String, HashMap<String, Long>> recentEvets = new HashMap<String, HashMap<String, Long>>();
 
         JsonObject charData = new JsonObject();
         HashMap<Integer, HashMap<String, Object>> beforeSort = new HashMap<Integer, HashMap<String, Object>>();
@@ -79,32 +78,69 @@ public class DatadogAdaptor {
                     HashMap<String, Object> tempData = new HashMap<String, Object>();
                     tempData.put("lead_guid", leadGUid);
                     tempData.put("eventTime", eventTime);
-
-                    HashMap<String, HashMap<String, Object>> tempHashMap = new HashMap<String, HashMap<String, Object>>();
-                    if (!(leadGUid == null || leadGUid.length() == 0)) {
-                        if (!beforeSort.containsKey(priorityNumber)) {
-                            profileInfo.put("count", 1);
-
-                            ArrayList<HashMap<String, Object>> storeData = new ArrayList<HashMap<String, Object>>();
-                            storeData.add(tempData);
-
-                            profileInfo.put("resultAttributes", storeData);
-                            profileInfo.put("page", page);
-                            beforeSort.put(priorityNumber, profileInfo);
-                        } else {
-                            ArrayList<HashMap<String, Object>> storeData = (ArrayList<HashMap<String, Object>>) (beforeSort.get(priorityNumber)).get("resultAttributes");
-                            Integer counter = (Integer) (beforeSort.get(priorityNumber)).get("count");
-                            storeData.add(tempData);
-                            profileInfo = beforeSort.get(priorityNumber);
-                            profileInfo.replace("count", counter + 1);
-                            //                        profileInfo.replace("lead_guid", storeData);
-                            profileInfo.replace("resultAttributes", storeData);
-                            beforeSort.replace(priorityNumber, profileInfo);
-
+                    if(recentEvets.containsKey(page)){
+                        HashMap<String, Long> leadEvents = recentEvets.get(page);
+                        if(recentEvets.get(page).containsKey(leadGUid)){
+                            if(recentEvets.get(page).get(leadGUid)<eventTime){
+                                leadEvents.replace(leadGUid, eventTime);
+                            }
+                        }else{
+                            leadEvents.put(leadGUid, eventTime);
                         }
+                        recentEvets.replace(page, leadEvents);
+                    }else{
+                        recentEvets.put(page, new HashMap<String, Long>() {{put(leadGUid, eventTime);}});
+
                     }
+
+//                    HashMap<String, HashMap<String, Object>> tempHashMap = new HashMap<String, HashMap<String, Object>>();
+//                    if (!(leadGUid == null || leadGUid.length() == 0)) {
+//                        if (!beforeSort.containsKey(priorityNumber)) {
+//                            profileInfo.put("count", 1);
+//
+//                            ArrayList<HashMap<String, Object>> storeData = new ArrayList<HashMap<String, Object>>();
+//                            storeData.add(tempData);
+//
+//                            profileInfo.put("resultAttributes", storeData);
+//                            profileInfo.put("page", page);
+//                            beforeSort.put(priorityNumber, profileInfo);
+//                        } else {
+//                            ArrayList<HashMap<String, Object>> storeData = (ArrayList<HashMap<String, Object>>) (beforeSort.get(priorityNumber)).get("resultAttributes");
+//                            Integer counter = (Integer) (beforeSort.get(priorityNumber)).get("count");
+//                            storeData.add(tempData);
+//                            profileInfo = beforeSort.get(priorityNumber);
+//                            profileInfo.replace("count", counter + 1);
+//                            //                        profileInfo.replace("lead_guid", storeData);
+//                            profileInfo.replace("resultAttributes", storeData);
+//                            beforeSort.replace(priorityNumber, profileInfo);
+//
+//                        }
+//                    }
                 }
-                charData = sortDataHelper.getSortedData(beforeSort);
+
+                HashMap<Integer, HashMap<String, Object>> newBeforeSort = new HashMap<Integer, HashMap<String, Object>>();
+
+//                System.out.println("recentEvets = " + recentEvets.toString());
+//                System.out.println("beforeSort = " + beforeSort.toString());
+                for (String key:recentEvets.keySet()
+                     ) {
+                    HashMap<String, Object> eachPageEvents = new HashMap<String, Object>();
+
+                    ArrayList<HashMap<String, Object>> resAttr = new ArrayList<HashMap<String, Object>>();
+                    for (String id: recentEvets.get(key).keySet()
+                         ) {
+                        HashMap<String, Object> eachEvent = new HashMap<String, Object>();
+                        eachEvent.put("eventTime", recentEvets.get(key).get(id));
+                        eachEvent.put("lead_guid", id);
+                        resAttr.add(eachEvent);
+                    }
+                    eachPageEvents.put("count", resAttr.size());
+                    eachPageEvents.put("page", key);
+                    eachPageEvents.put("resultAttributes", resAttr);
+                    newBeforeSort.put(auto.get(key), eachPageEvents);
+                }
+//                System.out.println("newbeforeSort = " + newBeforeSort.toString());
+                charData = sortDataHelper.getSortedData(newBeforeSort);
 
 
             } catch (ApiException e) {

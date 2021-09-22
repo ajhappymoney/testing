@@ -1,4 +1,4 @@
-const charts = document.querySelectorAll(".chart");
+// const charts = document.querySelectorAll(".chart");
 
 
 // $(document).ready(function () {
