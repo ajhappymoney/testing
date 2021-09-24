@@ -1,0 +1,31 @@
+version: 0.2
+
+env:
+  parameter-store:
+    NPM_TOKEN: "/devops/build/npmToken"
+    DOCKERHUB_USERNAME: "/devops/build/dockerhubUsername"
+    DOCKERHUB_PASSWORD: "/devops/build/dockerhubPassword"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - echo Uninstalling AWS CLI V1
+      - rm -rf /usr/local/aws
+      - rm -rf /root/.pyenv/shims/aws
+      - echo Installing AWS CLI V2
+      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      - unzip -qq awscliv2.zip
+      - ./aws/install
+      - aws --version
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 730502903637.dkr.ecr.us-east-1.amazonaws.com
+      - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+      - COMMIT_SHA=$(git rev-parse HEAD || echo $Commit)
+      - REPOSITORY_URI=730502903637.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${Service}
+      - echo Service ${Service}
+      - echo Commit ${COMMIT_SHA}
+      - docker pull $Service:stage || true
+
+  build:
+    commands:
+      - DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 BUILDKIT_INLINE_CACHE=1 docker-compose build
