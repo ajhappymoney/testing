@@ -92,16 +92,21 @@ public class DashboardController {
         }
     }
 
-    @RequestMapping(value = "/test", method = RequestMethod.GET, params = {"leaduid"})
-    public ModelAndView getDatadogLink(@RequestParam(value="leaduid", required = true) String argName) {
-        String datadogUrl= dashboardService.getDatadogLink(argName);
+    @RequestMapping(value = "/datadog", method = RequestMethod.GET, params = {"leaduid", "fromdt","todt"})
+    public ModelAndView getDatadogLink(@RequestParam(value="leaduid", required = true) String leadGuid,
+                                       @RequestParam(required = true, name = "fromdt") String fromDate, @RequestParam(required = true, name = "todt") String toDate) {
+
+        String datadogUrl= dashboardService.getDatadogLink(leadGuid, fromDate, toDate);
+        System.out.println("datadogUrl = " + datadogUrl);
         return new ModelAndView(new RedirectView(datadogUrl));
 
     }
 
-    @RequestMapping(value = "/fullstory", method = RequestMethod.GET, params = {"leaduid"})
-    public ModelAndView getFullStoryLink(@RequestParam(value="leaduid", required = true) String argName) {
-        String sessionString = dashboardService.getFullStoryLink(argName);
+    @RequestMapping(value = "/fullstory", method = RequestMethod.GET, params = {"leaduid","memberid","fromdt","todt"})
+    public ModelAndView getFullStoryLink(@RequestParam(value="leaduid", required = true) String leadGuid,
+                                         @RequestParam(required = true, name = "fromdt") String fromDate, @RequestParam(required = true, name = "memberid") String memberid,
+    @RequestParam(required = true, name = "todt") String toDate){
+        String sessionString = dashboardService.getFullStoryLink(leadGuid, memberid, fromDate, toDate);
         return new ModelAndView(new RedirectView(sessionString));
 
     }

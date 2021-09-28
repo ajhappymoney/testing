@@ -7,6 +7,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -17,16 +20,24 @@ public class FullStoryAdapter {
     @Autowired
     private FullStoryHelper fullStoryHelper;
     @Autowired
-    private DatadogAdaptor dd;
+    private DatadogAdaptor datadogAdaptor;
 
-    public String getSession(String guid){
+    public String getSession(String leadGuid, String memberId, String fromDate, String toDate){
         try{
             //DatadogAdaptor dd = new DatadogAdaptor();
-            int memberId = dd.getMemberId(guid);
+            if(!(memberId == null || memberId.trim().length() == 0)){
+
+                Long fromEPoch = Long.parseLong(fromDate);
+                OffsetDateTime fromOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(fromEPoch).toInstant(), ZoneOffset.UTC);
+
+                Long toEPoch = Long.parseLong(toDate);
+                OffsetDateTime toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
+
+                memberId = Integer.toString(datadogAdaptor.getMemberIdValue(fromOffsetDateTime, toOffsetDateTime, leadGuid));
+            }
+
             ResponseEntity<Object> status = exchangeRest("/api/v1/sessions?uid=" + memberId);
             ArrayList<LinkedHashMap> sessions = (ArrayList<LinkedHashMap>)status.getBody();
-//            System.out.println((((LinkedHashMap) sessions.get(0)).get("FsUrl")).toString());
-//            System.out.println("LinkedHashMap = " + sessions.toString());
             return (((LinkedHashMap) sessions.get(0)).get("FsUrl")).toString();
         } catch (Exception e){
             e.printStackTrace();

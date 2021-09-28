@@ -168,8 +168,11 @@
                 var cols = [];
 
                 for (var i = 0; i < data.length; i++) {
-                    var datadoglink = ' <a href="/test?leaduid='+ data[i]['lead_guid']  +'" target="_blank"" >DataDog logs for this lead</a>';
-                    var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'" target="_blank"" >Latest FullStory session</a>';
+                    var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a>';
+                    // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
+                        
+                    // }
+                    var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
                     var date = new Date(data[i]["eventTime"]);
 
                     data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
