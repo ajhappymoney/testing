@@ -14,9 +14,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.happymoney.productionobservability.helper.SortDataHelper;
 import com.happymoney.productionobservability.model.TableResponse;
+import com.happymoney.productionobservability.service.DashboardService;
 import org.apache.commons.collections4.map.LinkedMap;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -37,7 +40,11 @@ public class DatadogAdaptor {
     @Autowired
     private SortDataHelper sortDataHelper;
 
+    Logger logger = LoggerFactory.getLogger(DatadogAdaptor.class);
+
     public JsonObject getDatadogLogData(OffsetDateTime fromDate, OffsetDateTime toDate){
+
+        logger.info("Extracting Loan journey data from datadog between from = "+fromDate+" to = "+toDate);
 
         Map<String,Integer> auto = sortDataHelper.getPriorityMap();
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
@@ -50,7 +57,7 @@ public class DatadogAdaptor {
 
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
         Set<String> allGuids = new HashSet<String>();
-        if(!(queryRes==null)) {
+        if(!(queryRes==null || queryRes.size()==0)) {
                 for (Log logmodel :
                         queryRes) {
                     HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
@@ -132,7 +139,7 @@ public class DatadogAdaptor {
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
 
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor);
-        if(!(queryRes==null)) {
+        if(!(queryRes==null || queryRes.size()==0)) {
             String response = queryRes.get(0).toString();
             Pattern pattern3 = Pattern.compile("member_id(\\p{Punct})*(\\p{Space})*(\\d{3,11})(\\p{Space})*(\\p{Punct})?");
             Matcher matcher3 = pattern3.matcher(response);
@@ -153,7 +160,7 @@ public class DatadogAdaptor {
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor);
-        if(!(queryRes==null)) {
+        if(!(queryRes==null || queryRes.size()==0)) {
             for (Log logmodel :
                     queryRes) {
                 HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
@@ -169,14 +176,13 @@ public class DatadogAdaptor {
         return null;
     }
 
-    public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId){
+    public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, String leadId){
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
-        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
-        System.out.println("filterQuery ="  + filterQuery);
+        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND @lead_guid:"+leadId+")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
+        toOffsetDateTime = OffsetDateTime.now();
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromOffsetDateTime, toOffsetDateTime, pageLimit, pageCursor);
-//        System.out.println("queryRes "+queryRes);
         if(!(queryRes==null)) {
             for (Log logmodel :
                     queryRes) {
@@ -207,25 +213,23 @@ public class DatadogAdaptor {
                     leadJourney.put(page, eventTime);
                     recentEvents.put(leadGUid, leadJourney);
                 }
-
-
-
             }
         }
         Gson gson = new Gson();
-        System.out.println("recentEvents "+recentEvents.toString());
         String json = gson.toJson(recentEvents);
+//        System.out.println("recentEvents = " + recentEvents );
         JsonObject resJsonObject = JsonParser.parseString(json).getAsJsonObject();
         return resJsonObject;
     }
 
     private List<Log> getDatadogResultData(String filterQuery, OffsetDateTime fromDate, OffsetDateTime toDate, Integer pageLimit, String pageCursor ){
         try{
-
             ApiClient datadogClient = datadogConnectionAdaptor.getDatadogApiClient();
             if(!(datadogClient==null)) {
                 LogsApi apiInstance = new LogsApi(datadogClient);
                 LogsSort sort = LogsSort.fromValue("timestamp"); // LogsSort | Order of logs in results.
+                logger.info("Calling listLogsGet api call with filterQuery:"+filterQuery+" filterFrom:"+fromDate+
+                        " filterTo:"+toDate+" sort:"+sort.toString()+" pageLimit:"+pageLimit);
                 try {
                     LogsListResponse result = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
                             .filterQuery(filterQuery)
@@ -235,15 +239,17 @@ public class DatadogAdaptor {
                             .pageLimit(pageLimit));
                     return result.getData();
                 } catch (ApiException e) {
-                    System.err.println("Exception when calling LogsApi#listLogsGet");
-                    System.err.println("Status code: " + e.getCode());
-                    System.err.println("Reason: " + e.getResponseBody());
-                    System.err.println("Response headers: " + e.getResponseHeaders());
-                    e.printStackTrace();
+                    logger.error("Exception when calling LogsApi#listLogsGet");
+                    logger.error("Status code: " + e.getCode());
+                    logger.error("Reason: " + e.getResponseBody());
+                    logger.error("Response headers: " + e.getResponseHeaders());
+
                 }
+            }else{
+                logger.info("Unable to setup datadog client");
             }
         } catch (Exception e) {
-                e.printStackTrace();
+            logger.error(e.toString());
         }
         return null;
     }

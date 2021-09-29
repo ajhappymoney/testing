@@ -3,6 +3,8 @@ package com.happymoney.productionobservability.adaptor;
 import com.datadog.api.v2.client.ApiClient;
 import com.datadog.api.v2.client.Configuration;
 import com.happymoney.productionobservability.helper.DatadogHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,8 @@ public class DatadogConnectionAdaptor {
 
     @Autowired
     private DatadogHelper datadogHelper;
+
+    Logger logger = LoggerFactory.getLogger(DatadogConnectionAdaptor.class);
 
     public ApiClient getDatadogApiClient(){
         try {

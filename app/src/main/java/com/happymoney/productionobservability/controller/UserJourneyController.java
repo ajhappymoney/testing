@@ -6,6 +6,8 @@ import com.happymoney.productionobservability.service.DashboardService;
 import com.happymoney.productionobservability.service.UserJourneyService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
@@ -30,6 +32,8 @@ public class UserJourneyController {
     @Autowired
     private UserJourneyService userJourneyService;
 
+    Logger logger = LoggerFactory.getLogger(UserJourneyController.class);
+
     @RequestMapping(value = "/userJourney", method= RequestMethod.GET)
     public String userJourney() {
         return "userJourney";
@@ -39,7 +43,7 @@ public class UserJourneyController {
     public String getUserJourney(@RequestParam(required = true, name = "fromdt") String fromdt,
                                  @RequestParam(required = true, name = "todt") String todt,
     @RequestParam(required = true, name = "leadId") String leadId,  Model model) throws ParseException {
-        System.out.println("fromdt = " + fromdt + ", todt = " + todt + ", leadID = " + leadId);
+        logger.info("Loading user Journey information for leadID:"+leadId+" between fromdt = " + fromdt + ", todt = " + todt);
 
         JSONArray seriesArray = new JSONArray();
         JsonObject userJourney = userJourneyService.getUserJourneyData(fromdt, todt, leadId);
@@ -103,8 +107,8 @@ public class UserJourneyController {
                 funnelPage.add(mapentry.getKey());
                 count++;
             }
-            System.out.println("result "+result );
-            System.out.println("funnelPage " + funnelPage);
+//            System.out.println("result "+result );
+//            System.out.println("funnelPage " + funnelPage);
 
             for(int j=count-1; j>=0; j--){
                 ArrayList<Object> temp = new ArrayList<Object>();
@@ -113,8 +117,8 @@ public class UserJourneyController {
                 sample.add(temp);
             }
             Collections.reverse(funnelPage);
-            System.out.println("funnelPage " + funnelPage);
-            System.out.println("sample = " + sample);
+//            System.out.println("funnelPage " + funnelPage);
+//            System.out.println("sample = " + sample);
 
             seriesData.put("data", sample);
             seriesData.put("type","scatter");
@@ -124,19 +128,12 @@ public class UserJourneyController {
 
 
         }
-
-
-//        return result;
-
-//        System.out.println("lineSeriesData = " + lineSeriesData );
         model.addAttribute("lineSeriesData",lineSeriesData);
-//        System.out.println("funnelPage = " + funnelPage );
         model.addAttribute("fromdt", fromdt);
         model.addAttribute("todt", todt);
         model.addAttribute("seriesArray",seriesArray);
         model.addAttribute("leadId",leadId);
         model.addAttribute("funnelPage", funnelPage);
-//        System.out.println("seriesArray " +seriesArray);
 
         return "userJourney";
     }

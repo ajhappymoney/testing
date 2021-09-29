@@ -36,7 +36,7 @@
                 <div class="card h-100">
                     <div class="card-header">
                         <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                        Funnel page
+                        User Journey
                     </div>
                     <div class="card-body">
                         <div id="container" style="width:100%; height:100%;"></div>
@@ -52,6 +52,10 @@
 <!-- <div th:include="fragments/homefooter :: footer"></div>s -->
 <script th:inline="javascript">
     /*<![CDATA[*/
+        var dash = document.querySelector('#dashboard');
+        dash.classList.remove('active');
+        var userJ = document.querySelector("#userJourney");
+        userJ.classList.add('active');
         var totime;
         var fromtime;
         var leadID;
@@ -88,7 +92,6 @@
 
 
         function drawlineChart() {
-            alert(Date.UTC(2007, 5, 01));
             // var simpleJsonObject =[[${simpleJsonObject}]];
             var userJourneyLineChart = Highcharts.chart('container', {
                 chart: {
@@ -96,9 +99,13 @@
                     type: 'line',
                     inverted: true
                 },
+                title: {
+                        text: ''
+                    },
                 
                 xAxis: {
                     categories: [[${funnelPage}]]
+                    // categories: ["Offer", "Income", "Balance", "HousingPayment", "Address", "Birthday", "Account", "Phone"]
                 // categories: ['PlaidNoAuth', 'ContactUs', 'Review', 'Autopay', 'KBA Failed', 'KBA', 'Experian Credit Freeze', 'AdverseAction', 'E-Sign Complete', 'Truth In Lending Statement', 'Partner Lending Page', 'Offer Review', 'Verification Documents', 'BankAccount', 'DCP', 'Employment', 'Offer', 'Balance', 'Account', 'HousingPayment', 'Income', 'Phone', 'Address', 'Birthday', 'Name']
                 // categories: ["Name","Birthday","Address","Phone","Income","HousingPayment","Account","Balance","Offer","Employment","DCP","BankAccount","Verification Documents","Offer Review","Partner Lending Page","Truth In Lending Statement","E-Sign Complete","AdverseAction","Experian Credit Freeze","KBA","KBA Failed","Autopay","Review","ContactUs","PlaidNoAuth"]
             },
@@ -128,6 +135,7 @@
 
                     type: 'datetime',
                     labels: {
+                        step: 2,
                         rotation: -45,
                         formatter: function() {
                                 return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
@@ -140,6 +148,7 @@
                 },
 
                 series: [[${seriesArray}]]
+
 
             });
 
