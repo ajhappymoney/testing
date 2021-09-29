@@ -8,6 +8,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,8 @@ public class DashboardController {
     @Autowired
     private DashboardService dashboardService;
 
+    Logger logger = LoggerFactory.getLogger(DashboardController.class);
+
     @RequestMapping(value = "/chart", method=RequestMethod.GET)
     public String chart(@RequestParam(required = false, name = "fromdt") String fromdt, @RequestParam(required = false, name = "todt") String todt , Model model) throws ParseException {
         OffsetDateTime fromDate;
@@ -47,6 +51,7 @@ public class DashboardController {
             Long toEPoch = Long.parseLong(todt);
             toDate = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
         }
+        logger.info("Loading dashboard for loan journey from = "+fromDate+" to = "+toDate);
         JsonObject result = dashboardService.getPageCount(fromDate, toDate);
 
         ArrayList<String> pageNames = new ArrayList<String>();
@@ -92,16 +97,26 @@ public class DashboardController {
         }
     }
 
-    @RequestMapping(value = "/test", method = RequestMethod.GET, params = {"leaduid"})
-    public ModelAndView getDatadogLink(@RequestParam(value="leaduid", required = true) String argName) {
-        String datadogUrl= dashboardService.getDatadogLink(argName);
+    @RequestMapping(value = "/datadog", method = RequestMethod.GET, params = {"leaduid","errorlog", "fromdt","todt"})
+    public ModelAndView getDatadogLink(@RequestParam(value="leaduid", required = true) String leadGuid, @RequestParam(value="errorlog", required = true) Boolean errorLog,
+                                       @RequestParam(required = true, name = "fromdt") String fromDate, @RequestParam(required = true, name = "todt") String toDate) {
+
+        String datadogUrl= dashboardService.getDatadogLink(leadGuid, errorLog, fromDate, toDate);
+        logger.info("Generated Datadog Url = " + datadogUrl);
         return new ModelAndView(new RedirectView(datadogUrl));
 
     }
 
-    @RequestMapping(value = "/fullstory", method = RequestMethod.GET, params = {"leaduid"})
-    public ModelAndView getFullStoryLink(@RequestParam(value="leaduid", required = true) String argName) {
-        String sessionString = dashboardService.getFullStoryLink(argName);
+    @RequestMapping(value = "/fullstory", method = RequestMethod.GET, params = {"leaduid","memberid","fromdt","todt"})
+    public ModelAndView getFullStoryLink(@RequestParam(value="leaduid", required = true) String leadGuid,
+                                         @RequestParam(required = true, name = "fromdt") String fromDate, @RequestParam(required = true, name = "memberid") String memberid,
+    @RequestParam(required = true, name = "todt") String toDate){
+        logger.info("Extracting full story link for leadGuid = " + leadGuid +", memberid = " + memberid +", fromDate = " + fromDate + ", toDate = " + toDate);
+        String sessionString = dashboardService.getFullStoryLink(leadGuid, memberid, fromDate, toDate);
+        if(sessionString==null){
+            return new ModelAndView("noFullStoryPage");
+        }
+        logger.info("Generated FullStory Url = " + sessionString);
         return new ModelAndView(new RedirectView(sessionString));
 
     }
