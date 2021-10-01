@@ -11,7 +11,7 @@
         <div class= "row">
             <div class="col-md-6 mb-3" style="height: 60%;">
                 <div style="margin: 10px; width: 100%;">
-                    <form action="/getUserJourney">
+                    <form id="search">
                         <div class="form-group">
                         <label for="leadId">Lead ID</label>
                         <input type="text" class="form-control" id="leadId" aria-describedby="leadIDHelp" placeholder="Enter lead ID" name="leadId">
@@ -77,8 +77,32 @@
         
         document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
         document.getElementById('todt').value = totime.toISOString().slice(0,16);   
-        
 
+
+        $("#search").submit(function(e) {
+
+            e.preventDefault(); // avoid to execute the actual submit of the form.
+
+            var form = $(this);
+            // var url = form.attr('action');
+
+            var fromdate = new Date(document.getElementById('fromdt').value);
+            var todate = new Date(document.getElementById('todt').value);
+            var leadGUid = document.getElementById('leadId').value;
+
+            $.ajax({
+                type: "GET",
+                url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
+                dataType: "html",
+                success: function(data) {     
+                    $("body").html(data);
+                }
+                });
+
+
+        });
+        
+   
         $(function () {
             Highcharts.setOptions({
                 lang: {
@@ -92,48 +116,29 @@
 
 
         function drawlineChart() {
+            var page = [[${funnelPage}]];
             // var simpleJsonObject =[[${simpleJsonObject}]];
             var userJourneyLineChart = Highcharts.chart('container', {
-                chart: {
-                
-                    type: 'line',
-                    inverted: true
-                },
+               chart:{
+                   type: 'scatter'
+               },
                 title: {
                         text: ''
                     },
-                
-                xAxis: {
-                    categories: [[${funnelPage}]]
-                    // categories: ["Offer", "Income", "Balance", "HousingPayment", "Address", "Birthday", "Account", "Phone"]
-                // categories: ['PlaidNoAuth', 'ContactUs', 'Review', 'Autopay', 'KBA Failed', 'KBA', 'Experian Credit Freeze', 'AdverseAction', 'E-Sign Complete', 'Truth In Lending Statement', 'Partner Lending Page', 'Offer Review', 'Verification Documents', 'BankAccount', 'DCP', 'Employment', 'Offer', 'Balance', 'Account', 'HousingPayment', 'Income', 'Phone', 'Address', 'Birthday', 'Name']
-                // categories: ["Name","Birthday","Address","Phone","Income","HousingPayment","Account","Balance","Offer","Employment","DCP","BankAccount","Verification Documents","Offer Review","Partner Lending Page","Truth In Lending Statement","E-Sign Complete","AdverseAction","Experian Credit Freeze","KBA","KBA Failed","Autopay","Review","ContactUs","PlaidNoAuth"]
-            },
-            tooltip: {
-                formatter: function() {
-                    var chart = Highcharts.charts[0],
-                        weekdays = chart.options.lang.weekdays,
-                        day = new Date(this.y).toLocaleString("en-US", {timeZoneName: "short"});
 
-                    return day + ': ' + this.x;
+            plotOptions: {
+                series: {
+                    allowPointSelect: true,
+                    marker: {
+                        enabled: true,
+                        value: 'x'
+                        
+                    }
                 }
             },
-                yAxis: {
-                    // type: 'datetime',
-                    // //tickInterval: 24 * 3600 * 1000, // one day
-                    // labels: {
-                    //     rotation: -45,
-                    //     style: {
-                    //         fontSize: '9px',
-                    //         fontFamily: 'Verdana, sans-serif'
-                    //     }
-                    // },
-                    // crosshair: true,
-                    // dateTimeLabelFormats: {
-                    //     second: '%d %b %y <br/> %H:%M %P',
-                    // }
 
-                    type: 'datetime',
+            xAxis: {
+                type: 'datetime',
                     labels: {
                         step: 2,
                         rotation: -45,
@@ -144,8 +149,23 @@
                     startOnTick: true,
                     endOnTick: true,
                     showLastLabel: true,
-              
+            },
+            tooltip: {
+                formatter: function() {
+                    var chart = Highcharts.charts[0],
+                        weekdays = chart.options.lang.weekdays,
+                        day = new Date(this.x);
+
+                    return day + ': ' + page[this.y];
+                }
+            },
+                
+                yAxis: {
+                title: {
+                    text: 'Funnel Page'
                 },
+                categories: [[${funnelPage}]]
+            },
 
                 series: [[${seriesArray}]]
 

@@ -1,5 +1,6 @@
 package com.happymoney.productionobservability.controller;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.happymoney.productionobservability.service.DashboardService;
@@ -40,100 +41,29 @@ public class UserJourneyController {
     }
 
     @RequestMapping(value="/getUserJourney", method = RequestMethod.GET)
-    public String getUserJourney(@RequestParam(required = true, name = "fromdt") String fromdt,
-                                 @RequestParam(required = true, name = "todt") String todt,
-    @RequestParam(required = true, name = "leadId") String leadId,  Model model) throws ParseException {
-        logger.info("Loading user Journey information for leadID:"+leadId+" between fromdt = " + fromdt + ", todt = " + todt);
+    public String getUserJourney(@RequestParam("fromdate") String fromdate,
+                                 @RequestParam("todate") String todate,
+    @RequestParam("leadId") String leadId,  Model model) throws ParseException {
+        logger.info("Loading user Journey information for leadID:"+leadId+" between fromdt = " + fromdate + ", todt = " + todate);
+
+
+        OffsetDateTime fromOffsetDateTime;
+        OffsetDateTime toOffsetDateTime;
+
+        Long fromEpoch = Long.parseLong(fromdate);
+        fromOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(fromEpoch).toInstant(), ZoneOffset.UTC);
+
+        Long toEPoch = Long.parseLong(todate);
+        toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
         JSONArray seriesArray = new JSONArray();
-        JsonObject userJourney = userJourneyService.getUserJourneyData(fromdt, todt, leadId);
-        ArrayList<ArrayList<Object>> lineSeriesData = new ArrayList<ArrayList<Object>>();
-        ArrayList<ArrayList<Object>> sample = new ArrayList<ArrayList<Object>>();
-        Map<String, Integer> mapval = new HashMap<>();
+        JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId);
 
-        Map<String,Integer> auto = new HashMap<String,Integer>();
-        JSONObject sampleObj = new JSONObject();
-//        ["Name","Birthday","Address","Phone","Income","HousingPayment","Account","Balance","Offer","Employment","DCP","BankAccount","Verification Documents",
-//        "Offer Review","Partner Lending Page","Truth In Lending Statement","E-Sign Complete","AdverseAction",
-//        "Experian Credit Freeze","KBA","KBA Failed","Autopay","Review","ContactUs","PlaidNoAuth"];
-        auto.put("Name", 1);
-        auto.put("Birthday", 2);
-        auto.put("Address", 3);
-        auto.put("Phone", 4);
-        auto.put("Income", 5);
-        auto.put("HousingPayment", 6);
-        auto.put("Account", 7);
-        auto.put("Balance", 8);
-        auto.put("Offer", 9);
-        auto.put("Employment", 10);
-        auto.put("DCP", 11);
-        auto.put("BankAccount", 12);
-        auto.put("Verification Documents", 13);
-        auto.put("Offer Review", 14);
-        auto.put("Partner Lending Page", 15);
-        auto.put("Truth In Lending Statement", 16);
-        auto.put("E-Sign Complete", 17);
-        auto.put("AdverseAction", 18);
-        auto.put("Experian Credit Freeze", 19);
-        auto.put("KBA", 20);
-        auto.put("KBA Failed", 21);
-        auto.put("Autopay", 22);
-        auto.put("Review", 23);
-        auto.put("ContactUs", 24);
-        auto.put("PlaidNoAuth", 25);
-        List<String> funnelPage = new ArrayList<String>();
-        Set<Map.Entry<String, JsonElement>> entrySet = userJourney.entrySet();
-        for(Map.Entry<String,JsonElement> entry : entrySet){
-            JSONObject seriesData = new JSONObject();
-
-            JsonObject keyvalue = userJourney.getAsJsonObject(entry.getKey());
-            seriesData.put("name", entry.getKey());
-            for (String key: keyvalue.keySet()
-                 ) {
-                ArrayList<Object> temp = new ArrayList<Object>();
-                mapval.put(key, auto.get(key));
-                temp.add(key);
-                temp.add(Long.parseLong(keyvalue.get(key).toString()));
-                lineSeriesData.add(temp);
-                sampleObj.put(key, Long.parseLong(keyvalue.get(key).toString()));
-            }
-
-            List<Map.Entry<String, Integer>> list = new ArrayList<>(mapval.entrySet());
-            list.sort(Map.Entry.comparingByValue());
-            int count = 0;
-            Map<String, Integer> result = new LinkedHashMap<>();
-            for (Map.Entry<String, Integer> mapentry : list) {
-                result.put(mapentry.getKey(), mapentry.getValue());
-                funnelPage.add(mapentry.getKey());
-                count++;
-            }
-//            System.out.println("result "+result );
-//            System.out.println("funnelPage " + funnelPage);
-
-            for(int j=count-1; j>=0; j--){
-                ArrayList<Object> temp = new ArrayList<Object>();
-                temp.add(funnelPage.get(j));
-                temp.add(sampleObj.get(funnelPage.get(j)));
-                sample.add(temp);
-            }
-            Collections.reverse(funnelPage);
-//            System.out.println("funnelPage " + funnelPage);
-//            System.out.println("sample = " + sample);
-
-            seriesData.put("data", sample);
-            seriesData.put("type","scatter");
-
-            seriesData.put("lineWidth", 1);
-            seriesArray.add(seriesData);
-
-
-        }
-        model.addAttribute("lineSeriesData",lineSeriesData);
-        model.addAttribute("fromdt", fromdt);
-        model.addAttribute("todt", todt);
-        model.addAttribute("seriesArray",seriesArray);
+        model.addAttribute("fromdt", fromOffsetDateTime);
+        model.addAttribute("todt", toOffsetDateTime);
+        model.addAttribute("seriesArray",userJourney.get("seriesArray"));
         model.addAttribute("leadId",leadId);
-        model.addAttribute("funnelPage", funnelPage);
+        model.addAttribute("funnelPage", userJourney.get("funnelPage"));
 
         return "userJourney";
     }

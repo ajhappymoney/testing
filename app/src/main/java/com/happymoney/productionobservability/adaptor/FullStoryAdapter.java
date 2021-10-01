@@ -50,7 +50,7 @@ public class FullStoryAdapter {
             }
         } catch (Exception e){
             logger.error(e.toString());
-            e.printStackTrace();
+//            e.printStackTrace();
         }
         return null;
     }
