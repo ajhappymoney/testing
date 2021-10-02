@@ -2,7 +2,10 @@ package com.happymoney.productionobservability.service;
 
 import com.google.gson.JsonObject;
 import com.happymoney.productionobservability.adaptor.DatadogAdaptor;
+import com.happymoney.productionobservability.helper.UserJourneyHelper;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -18,7 +21,10 @@ public class UserJourneyService {
     @Autowired
     private DatadogAdaptor datadogAdaptor;
 
-    public JsonObject getUserJourneyData(String fromDate, String toDate, String leadId){
+    @Autowired
+    private UserJourneyHelper userJourneyHelper;
+
+    public JSONObject getUserJourneyData(OffsetDateTime fromDate, OffsetDateTime toDate, String leadId){
         try {
 //            StringBuffer leadsQuery = new StringBuffer("(");
 //            if(leadId.contains(",")){
@@ -36,22 +42,17 @@ public class UserJourneyService {
 //            leadsQuery.append(")");
 //            System.out.println("leadsQuery = " + leadsQuery + ", leadId = " + leadId);
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS");
-            Date fromparsedDate = dateFormat.parse(fromDate.replace("T", " ") + ":00:000");
-            Date toparsedDate = dateFormat.parse(toDate.replace("T", " ") + ":00:000");
-            Timestamp fromtimestamp = new java.sql.Timestamp(fromparsedDate.getTime());
-            Timestamp totimestamp = new java.sql.Timestamp(toparsedDate.getTime());
 
-//            System.out.println("fromparsedDate = " + fromparsedDate + ", toparsedDate = " + toparsedDate );
-            OffsetDateTime fromOffsetDateTime = OffsetDateTime.ofInstant(fromtimestamp.toInstant(), ZoneOffset.UTC);
 
-            OffsetDateTime toOffsetDateTime = OffsetDateTime.ofInstant(totimestamp.toInstant(), ZoneOffset.UTC);
-
-            return datadogAdaptor.extractUserJourneyInfo(fromOffsetDateTime, toOffsetDateTime, leadId);
+            JsonObject datadogRes = datadogAdaptor.extractUserJourneyInfo(fromDate, toDate, leadId);
+            JSONObject userJourneyModelRes = userJourneyHelper.getUserJourneyModelAttributes(datadogRes);
+            return userJourneyModelRes;
         }catch (Exception e){
             e.printStackTrace();
         }
         return null;
 
     }
+
+
 }
