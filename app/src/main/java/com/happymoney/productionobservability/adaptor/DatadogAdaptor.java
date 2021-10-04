@@ -178,9 +178,10 @@ public class DatadogAdaptor {
         return null;
     }
 
-    public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, String leadId){
+    public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId){
         HashMap<String, HashMap<String, ArrayList<Long>>> recentEvents = new HashMap<String, HashMap<String, ArrayList<Long>>>();
-        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND @lead_guid:"+leadId+")";
+        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
+//        System.out.println("filterQuery = " + filterQuery );
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
 //        toOffsetDateTime = OffsetDateTime.now();
@@ -204,9 +205,6 @@ public class DatadogAdaptor {
                     HashMap<String, ArrayList<Long>> leadJourney = recentEvents.get(leadGUid);
                     if (leadJourney.containsKey(page)) {
                         leadJourney.get(page).add(eventTime);
-//                        if (leadJourney.get(page) > eventTime) {
-//                            leadJourney.replace(page, eventTime);
-//                        }
                     } else {
                         leadJourney.put(page, new ArrayList<Long>(Collections.singleton(eventTime)));
                     }

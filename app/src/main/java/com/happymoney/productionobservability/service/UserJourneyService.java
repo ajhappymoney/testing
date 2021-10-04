@@ -26,25 +26,22 @@ public class UserJourneyService {
 
     public JSONObject getUserJourneyData(OffsetDateTime fromDate, OffsetDateTime toDate, String leadId){
         try {
-//            StringBuffer leadsQuery = new StringBuffer("(");
-//            if(leadId.contains(",")){
-//                String[] leadGuids = leadId.split(",");
-//
-//                for(int i=0 ; i<leadGuids.length;i++){
-//                    leadsQuery.append("@lead_guid:"+leadGuids[i]);
-//                    if(!(i==leadGuids.length-1)){
-//                        leadsQuery.append(" OR ");
-//                    }
-//                }
-//            }else{
-//                leadsQuery.append("@lead_guid:"+leadId);
-//            }
-//            leadsQuery.append(")");
-//            System.out.println("leadsQuery = " + leadsQuery + ", leadId = " + leadId);
+            StringBuffer leadsQuery = new StringBuffer("(");
+            if(leadId.contains(",")){
+                String[] leadGuids = leadId.split(",");
 
+                for(int i=0 ; i<leadGuids.length;i++){
+                    leadsQuery.append("@lead_guid:"+leadGuids[i]);
+                    if(!(i==leadGuids.length-1)){
+                        leadsQuery.append(" OR ");
+                    }
+                }
+            }else{
+                leadsQuery.append("@lead_guid:"+leadId);
+            }
+            leadsQuery.append(")");
 
-
-            JsonObject datadogRes = datadogAdaptor.extractUserJourneyInfo(fromDate, toDate, leadId);
+            JsonObject datadogRes = datadogAdaptor.extractUserJourneyInfo(fromDate, toDate, leadsQuery);
             JSONObject userJourneyModelRes = userJourneyHelper.getUserJourneyModelAttributes(datadogRes);
             return userJourneyModelRes;
         }catch (Exception e){
