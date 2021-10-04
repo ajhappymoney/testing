@@ -90,14 +90,19 @@
             var todate = new Date(document.getElementById('todt').value);
             var leadGUid = document.getElementById('leadId').value;
 
-            $.ajax({
-                type: "GET",
-                url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
-                dataType: "html",
-                success: function(data) {     
-                    $("body").html(data);
-                }
-                });
+            var splitName = leadGUid.split(",");
+            if(splitName.length>5){
+                alert("Accepts max 5 leadIds");
+            }else{
+                $.ajax({
+                    type: "GET",
+                    url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
+                    dataType: "html",
+                    success: function(data) {     
+                        $("body").html(data);
+                    }
+                    });
+            }
 
 
         });
