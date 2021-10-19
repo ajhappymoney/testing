@@ -1,7 +1,6 @@
-plugins {
- 	id("com.github.davidmc24.gradle.plugin.avro") version("1.0.0")
+	plugins {
 	id("com.gorylenko.gradle-git-properties") version("2.2.4")
-	id("org.springframework.boot") version("2.4.3")
+	id("org.springframework.boot") version("2.5.5")
 	id("io.spring.dependency-management") version("1.0.11.RELEASE")
 //	checkstyle
 	java
@@ -14,10 +13,6 @@ plugins {
 group = "com.happymoney"
 
 java.sourceCompatibility = JavaVersion.VERSION_11
-
-avro {
-    fieldVisibility.set("PRIVATE")
-}
 
 
 gitProperties {
@@ -102,6 +97,11 @@ dependencies {
 	implementation("com.datadoghq:datadog-api-client:1.1.0")
 	// https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple
 	implementation("com.googlecode.json-simple:json-simple:1.1")
+
+	// Mapstruct
+	implementation("org.mapstruct:mapstruct:1.4.2.Final")
+	implementation("org.mapstruct:mapstruct-processor:1.4.2.Final")
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.4.2.Final")
 }
 
 tasks.compileJava {
