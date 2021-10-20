@@ -222,8 +222,60 @@ public class DatadogAdaptor {
         return resJsonObject;
     }
 
+    public HashMap<String, HashMap<String, Long>> getNormalCheckLogData(OffsetDateTime fromDate, OffsetDateTime toDate) {
+
+        logger.info("Extracting Loan journey data from datadog between from = " + fromDate + " to = " + toDate);
+
+        Map<String, Integer> auto = sortDataHelper.getPriorityMap();
+        HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
+
+        JsonObject charData = new JsonObject();
+
+        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND lead_guid)";
+        Integer pageLimit = 5000;
+        String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
+
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+
+        if(!(queryRes==null || queryRes.size()==0)) {
+            for (Log logmodel :
+                    queryRes) {
+                HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
+                HashMap<String, Object> profileAttribute = new HashMap<String, Object>();
+
+                logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes();
+                String leadGUid = (String) logAttributesHashMap.get("lead_guid");
+                if (!(leadGUid == null || leadGUid.length() == 0)) {
+                    Long eventTime = (Long) logAttributesHashMap.get("timestamp");
+
+                    profileAttribute = (HashMap<String, Object>) logAttributesHashMap.get("profile");
+
+                    String page = (String) profileAttribute.get("page");
+
+                    if (recentEvents.containsKey(leadGUid)) {
+                        HashMap<String, Long> leadEvents = recentEvents.get(leadGUid);
+                        if (recentEvents.get(leadGUid).containsKey(page)) {
+                            if (recentEvents.get(leadGUid).get(page) < eventTime) {
+                                leadEvents.replace(page, eventTime);
+                            }
+                        } else {
+                            leadEvents.put(page, eventTime);
+                        }
+                        recentEvents.replace(leadGUid, leadEvents);
+                    } else {
+                        recentEvents.put(leadGUid, new HashMap<String, Long>() {{
+                            put(page, eventTime);
+                        }});
+
+                    }
+                }
+            }
+        }
+        return recentEvents;
+    }
     private List<Log> getDatadogResultData(String filterQuery, OffsetDateTime fromDate, OffsetDateTime toDate, Integer pageLimit, String pageCursor ){
         try{
+            List<Log> finalList = new ArrayList<Log>();
             ApiClient datadogClient = datadogConnectionAdaptor.getDatadogApiClient();
             if(!(datadogClient==null)) {
                 LogsApi apiInstance = new LogsApi(datadogClient);
@@ -237,7 +289,24 @@ public class DatadogAdaptor {
                             .filterTo(toDate)
                             .sort(sort)
                             .pageLimit(pageLimit));
-                    return result.getData();
+                    finalList = result.getData();
+                    String afterPage = result.getMeta().getPage().getAfter();
+                    while(!afterPage.isEmpty()){
+                        LogsListResponse tempRes = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
+                                .filterQuery(filterQuery)
+                                .filterFrom(fromDate)
+                                .filterTo(toDate)
+                                .sort(sort)
+                                .pageLimit(pageLimit).pageCursor(afterPage));
+                        if(tempRes.getData().size()>0){
+                            finalList.addAll(tempRes.getData());
+                            afterPage = tempRes.getMeta().getPage().getAfter();
+                        }else{
+                            afterPage = "";
+                        }
+                    }
+                    return finalList;
+
                 } catch (ApiException e) {
                     logger.error("Exception when calling LogsApi#listLogsGet, Status code:"+e.getCode()+" reason:"+e.getResponseBody());
                 }

@@ -3,11 +3,16 @@
         <div class= "row">
             <div class="form-group">
                 <div style="margin: 10px; width: 100%;">
-                From<input id="fromdt" type="datetime-local"  />
-                <input id="myCheck" type="checkbox" />
-                To<input id="todt" type="datetime-local" />
-                <a id="myLink" title="Click to do something"
-                href="#" onclick="loadPage()">Load</a>
+                    <div class="form-group">
+                        <label for="fromdt">From</label>
+                            <input id="fromdt" type="datetime-local"  />
+                        <label for="myCheck"></label> 
+                            <input id="myCheck" type="checkbox" />
+                        <label for="todt">To</label>
+                            <input id="todt" type="datetime-local" />
+                <a id="myLink" title="Search loan journey for the selected time frame"
+                   href="#" onclick="loadPage()"><i class="bi bi-search" style="padding-left: 0.5%;"></i></a>
+                   </div>
             
                 </div>
             </div>
@@ -18,7 +23,7 @@
                 <div class="card h-100">
                     <div class="card-header">
                         <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                        Loan Journey
+                        Loan Journey<span class="me-2"><i class="bi bi-info-circle-fill" style="padding-left: 0.5%;" title="Displays bar graph of all the leads landing on each funnel page over a selected time slot"></i></span>
                     </div>
                     <div class="card-body">
                         <div id="salesByType" style="width:100%; height:100%;"></div>
