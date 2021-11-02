@@ -53,8 +53,9 @@ public class NormalJourneyController {
 
         model.addAttribute("fromdt", fromOffsetDateTime);
         model.addAttribute("todt", toOffsetDateTime);
-        model.addAttribute("seriesArray",normalUserJourney.get("seriesArray"));
+        model.addAttribute("seriesObj",normalUserJourney.get("seriesObj"));
         model.addAttribute("funnelPage", normalUserJourney.get("funnelPage"));
+        model.addAttribute("leadsList", normalUserJourney.get("leadsList"));
 
         return "normalJourney";
 

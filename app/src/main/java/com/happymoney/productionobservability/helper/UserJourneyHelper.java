@@ -67,6 +67,7 @@ public class UserJourneyHelper {
             seriesData.put("type","scatter");
             seriesData.put("lineWidth", 1);
             seriesData.put("color", colorCode);
+
             seriesArray.add(seriesData);
 
         }
@@ -79,10 +80,10 @@ public class UserJourneyHelper {
     public JSONObject getNormalJourneyModelAttributes(HashMap<String, HashMap<String, Long>> datadogLogData) {
 
         JSONObject normalJourneyResObject = new JSONObject();
-
-        JSONArray seriesArray = new JSONArray();
+        JSONObject seriesObj = new JSONObject();
 
         List<String> funnelPage = new ArrayList<String>();
+        JSONArray leadsList = new JSONArray();
 
         Map<String,Integer> auto = sortDataHelper.getPriorityMap();
         List<Map.Entry<String, Integer>> list = new ArrayList<>(auto.entrySet());
@@ -92,12 +93,14 @@ public class UserJourneyHelper {
             funnelPage.add(entry.getKey());
         }
 
-
         for(Map.Entry<String, HashMap<String, Long>> entry : datadogLogData.entrySet()) {
 
+            JSONArray seriesArray = new JSONArray();
             String key = entry.getKey();
             JSONObject seriesData = new JSONObject();
+            JSONObject leadData = new JSONObject();
             seriesData.put("name", entry.getKey());
+            leadData.put("lead", entry.getKey());
             HashMap<String, Long> value = entry.getValue();
 
             List<Map.Entry<String, Long> > eventList =
@@ -138,14 +141,16 @@ public class UserJourneyHelper {
                 seriesData.put("lineWidth", 1);
                 seriesData.put("color", colorCode);
                 seriesArray.add(seriesData);
+                seriesObj.put(entry.getKey(), seriesArray);
+                leadsList.add(leadData);
             }
-
-
         }
-        normalJourneyResObject.put("seriesArray",seriesArray);
+//        normalJourneyResObject.put("seriesArray",seriesArray);
         normalJourneyResObject.put("funnelPage",funnelPage);
+        normalJourneyResObject.put("leadsList",leadsList);
+        normalJourneyResObject.put("seriesObj", seriesObj);
 
-        System.out.println("normalJourneyResObject = " + normalJourneyResObject);
+        System.out.println("normalJourneyResObject = " + normalJourneyResObject.get("seriesObj"));
         return normalJourneyResObject;
     }
 

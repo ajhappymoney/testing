@@ -2,32 +2,21 @@ package com.happymoney.productionobservability.adaptor;
 
 import com.datadog.api.v2.client.ApiClient;
 import com.datadog.api.v2.client.ApiException;
-import com.datadog.api.v2.client.Configuration;
 import com.datadog.api.v2.client.api.LogsApi;
 import com.datadog.api.v2.client.model.Log;
 import com.datadog.api.v2.client.model.LogAttributes;
 import com.datadog.api.v2.client.model.LogsListResponse;
 import com.datadog.api.v2.client.model.LogsSort;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.happymoney.productionobservability.helper.SortDataHelper;
-import com.happymoney.productionobservability.model.TableResponse;
-import com.happymoney.productionobservability.service.DashboardService;
-import org.apache.commons.collections4.map.LinkedMap;
-import org.apache.commons.collections4.map.MultiKeyMap;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Array;
-import java.text.MessageFormat;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,7 +33,7 @@ public class DatadogAdaptor {
 
     Logger logger = LoggerFactory.getLogger(DatadogAdaptor.class);
 
-    public JsonObject getDatadogLogData(OffsetDateTime fromDate, OffsetDateTime toDate){
+    public List<Log> getDatadogLogData(OffsetDateTime fromDate, OffsetDateTime toDate, Boolean newCustomers){
 
         logger.info("Extracting Loan journey data from datadog between from = "+fromDate+" to = "+toDate);
 
@@ -52,86 +41,149 @@ public class DatadogAdaptor {
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
 
         JsonObject charData = new JsonObject();
-
-        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND lead_guid)";
+        String filterQuery;
+        if(newCustomers){
+            filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:\"/apply/prequal/birthday\" AND lead_guid)";
+        }else {
+            filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND lead_guid)";
+        }
         Integer pageLimit = 5000;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
 
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
-        Set<String> allGuids = new HashSet<String>();
-        if(!(queryRes==null || queryRes.size()==0)) {
+        if(newCustomers){
+            List<Log> finalList = new ArrayList<Log>();
+            Set<String> allGuids = new HashSet<String>();
+            if(!(queryRes==null || queryRes.size()==0)) {
                 for (Log logmodel :
                         queryRes) {
                     HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
-                    HashMap<String, Object> profileAttribute = new HashMap<String, Object>();
 
                     logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes();
                     String leadGUid = (String) logAttributesHashMap.get("lead_guid");
                     if (!(leadGUid == null || leadGUid.length() == 0)) {
                         allGuids.add(leadGUid);
-                        Long eventTime = (Long) logAttributesHashMap.get("timestamp");
-
-                        profileAttribute = (HashMap<String, Object>) logAttributesHashMap.get("profile");
-
-                        String page = (String) profileAttribute.get("page");
-
-                        if (recentEvents.containsKey(page)) {
-                            HashMap<String, Long> leadEvents = recentEvents.get(page);
-                            if (recentEvents.get(page).containsKey(leadGUid)) {
-                                if (recentEvents.get(page).get(leadGUid) < eventTime) {
-                                    leadEvents.replace(leadGUid, eventTime);
-                                }
-                            } else {
-                                leadEvents.put(leadGUid, eventTime);
-                            }
-                            recentEvents.replace(page, leadEvents);
-                        } else {
-                            recentEvents.put(page, new HashMap<String, Long>() {{
-                                put(leadGUid, eventTime);
-                            }});
-
-                        }
                     }
                 }
+                System.out.println("allGuids = " + allGuids + ", newCustomers = " + newCustomers);
+            }
+            if(!(allGuids.isEmpty() || allGuids==null || allGuids.size()==0)){
+                Integer counter = 0;
+                StringBuffer leadsQuery = new StringBuffer("(");
+                for (String leadId : allGuids
+                ) {
+                    counter += 1;
 
-                String guids2 = "";
-                for (String guid :
-                        allGuids) {
-                    if(guid.length()<10) continue;
-                    guids2 += guid + " OR ";
-                }
-                guids2 = guids2.substring(0, guids2.length() - 4);
-                JsonObject members = getMemberId(fromDate, toDate, guids2);
-
-                HashMap<Integer, HashMap<String, Object>> resHashMap = new HashMap<Integer, HashMap<String, Object>>();
-
-                for (String key:recentEvents.keySet()
-                     ) {
-                    HashMap<String, Object> eachPageEvents = new HashMap<String, Object>();
-
-                    ArrayList<HashMap<String, Object>> resAttr = new ArrayList<HashMap<String, Object>>();
-                    for (String id: recentEvents.get(key).keySet()
-                         ) {
-                        HashMap<String, Object> eachEvent = new HashMap<String, Object>();
-                        eachEvent.put("eventTime", recentEvents.get(key).get(id));
-                        eachEvent.put("lead_guid", id);
-                        if(members!=null && members.has(id)){
-                            eachEvent.put("member_id", members.get(id));
-                        }else{
-                            eachEvent.put("member_id", "");
-                        }
-                        resAttr.add(eachEvent);
+//                    leadsQuery.append("@lead_guid:" + leadId);
+                    if (counter == 1) {
+                        leadsQuery.append("@lead_guid:" + leadId);
                     }
-                    eachPageEvents.put("count", resAttr.size());
-                    eachPageEvents.put("page", key);
-                    eachPageEvents.put("resultAttributes", resAttr);
-                    resHashMap.put(auto.get(key), eachPageEvents);
+                    else{
+                        leadsQuery.append(" OR @lead_guid:" + leadId);
+                    }
+
+                    if (counter == 10) {
+                        counter = 0;
+                        leadsQuery.append(")");
+                        filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND " + leadsQuery.toString() + ")";
+                        List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+                        finalList.addAll(newCustomerRes);
+                        leadsQuery.setLength(0);
+                        leadsQuery.append("(");
+                    }
+
                 }
-                charData = sortDataHelper.getSortedData(resHashMap);
-                return charData;
+                if (counter != 10) {
+                    leadsQuery.append(")");
+                    filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND " + leadsQuery.toString() + ")";
+                    List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+                    if(finalList.size()==0){
+                        finalList = newCustomerRes;
+                    }else {
+                        finalList.addAll(newCustomerRes);
+                    }
+                }
+                return finalList;
+            }
+            return null;
+        }else {
+            return queryRes;
         }
-        return null;
     }
+
+//        Set<String> allGuids = new HashSet<String>();
+//        if(!(queryRes==null || queryRes.size()==0)) {
+//                for (Log logmodel :
+//                        queryRes) {
+//                    HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
+//                    HashMap<String, Object> profileAttribute = new HashMap<String, Object>();
+//
+//                    logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes();
+//                    String leadGUid = (String) logAttributesHashMap.get("lead_guid");
+//                    if (!(leadGUid == null || leadGUid.length() == 0)) {
+//                        allGuids.add(leadGUid);
+//                        Long eventTime = (Long) logAttributesHashMap.get("timestamp");
+//
+//                        profileAttribute = (HashMap<String, Object>) logAttributesHashMap.get("profile");
+//
+//                        String page = (String) profileAttribute.get("page");
+//
+//                        if (recentEvents.containsKey(page)) {
+//                            HashMap<String, Long> leadEvents = recentEvents.get(page);
+//                            if (recentEvents.get(page).containsKey(leadGUid)) {
+//                                if (recentEvents.get(page).get(leadGUid) < eventTime) {
+//                                    leadEvents.replace(leadGUid, eventTime);
+//                                }
+//                            } else {
+//                                leadEvents.put(leadGUid, eventTime);
+//                            }
+//                            recentEvents.replace(page, leadEvents);
+//                        } else {
+//                            recentEvents.put(page, new HashMap<String, Long>() {{
+//                                put(leadGUid, eventTime);
+//                            }});
+//
+//                        }
+//                    }
+//                }
+//
+//                String guids2 = "";
+//                for (String guid :
+//                        allGuids) {
+//                    if(guid.length()<10) continue;
+//                    guids2 += guid + " OR ";
+//                }
+//                guids2 = guids2.substring(0, guids2.length() - 4);
+//                JsonObject members = getMemberId(fromDate, toDate, guids2);
+//
+//                HashMap<Integer, HashMap<String, Object>> resHashMap = new HashMap<Integer, HashMap<String, Object>>();
+//
+//                for (String key:recentEvents.keySet()
+//                     ) {
+//                    HashMap<String, Object> eachPageEvents = new HashMap<String, Object>();
+//
+//                    ArrayList<HashMap<String, Object>> resAttr = new ArrayList<HashMap<String, Object>>();
+//                    for (String id: recentEvents.get(key).keySet()
+//                         ) {
+//                        HashMap<String, Object> eachEvent = new HashMap<String, Object>();
+//                        eachEvent.put("eventTime", recentEvents.get(key).get(id));
+//                        eachEvent.put("lead_guid", id);
+//                        if(members!=null && members.has(id)){
+//                            eachEvent.put("member_id", members.get(id));
+//                        }else{
+//                            eachEvent.put("member_id", "");
+//                        }
+//                        resAttr.add(eachEvent);
+//                    }
+//                    eachPageEvents.put("count", resAttr.size());
+//                    eachPageEvents.put("page", key);
+//                    eachPageEvents.put("resultAttributes", resAttr);
+//                    resHashMap.put(auto.get(key), eachPageEvents);
+//                }
+//                charData = sortDataHelper.getSortedData(resHashMap);
+//                return charData;
+//        }
+//        return null;
 
 
     public Integer getMemberIdValue(OffsetDateTime fromDate, OffsetDateTime toDate, String guid){
@@ -290,7 +342,12 @@ public class DatadogAdaptor {
                             .sort(sort)
                             .pageLimit(pageLimit));
                     finalList = result.getData();
-                    String afterPage = result.getMeta().getPage().getAfter();
+//                    System.out.println("result "+ result);
+                    String afterPage = "";
+                    if(result.getMeta()!=null) {
+                        afterPage = result.getMeta().getPage().getAfter();
+                    }
+
                     while(!afterPage.isEmpty()){
                         LogsListResponse tempRes = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
                                 .filterQuery(filterQuery)
@@ -314,6 +371,7 @@ public class DatadogAdaptor {
                 logger.info("Unable to setup datadog client");
             }
         } catch (Exception e) {
+
             logger.error(e.toString());
         }
         return null;

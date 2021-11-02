@@ -1,9 +1,11 @@
 package com.happymoney.productionobservability.service;
 
+import com.datadog.api.v2.client.model.Log;
 import com.google.gson.JsonObject;
 import com.happymoney.productionobservability.adaptor.DatadogAdaptor;
 import com.happymoney.productionobservability.adaptor.FullStoryAdapter;
 import com.happymoney.productionobservability.controller.DashboardController;
+import com.happymoney.productionobservability.helper.DashboardHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +24,14 @@ public class DashboardService
     @Autowired
     private FullStoryAdapter fullStoryAdapter;
 
+    @Autowired
+    private DashboardHelper dashboardHelper;
+
     Logger logger = LoggerFactory.getLogger(DashboardService.class);
 
-    public JsonObject getPageCount(OffsetDateTime fromDate, OffsetDateTime toDate) {
-        return datadogAdaptor.getDatadogLogData(fromDate, toDate);
+    public JsonObject getPageCount(OffsetDateTime fromDate, OffsetDateTime toDate, Boolean newCustomers) {
+        List<Log> datadogRes = datadogAdaptor.getDatadogLogData(fromDate, toDate, newCustomers);
+        return dashboardHelper.processDashboardData(fromDate, toDate, datadogRes);
     }
 
     public String getFullStoryLink(String leadGUid, String memberId, String fromDate, String toDate){

@@ -8,23 +8,34 @@
 <body class="page-container-bg-solid" id="loadPage">
 <div th:include="fragments/topmenuheader :: header"></div>
   <div class="container-fluid page-body-wrapper">
-    <div class= "row">
-        <div class="form-group">
-            <div style="margin: 10px; width: 100%;">
-                <div class="form-group">
-                    <label for="fromdt">From</label>
-                        <input id="fromdt" type="datetime-local"  />
-                    <label for="myCheck"></label> 
-                        <input id="myCheck" type="checkbox" />
-                    <label for="todt">To</label>
-                        <input id="todt" type="datetime-local" />
+    <div class= "row" style="margin: 0.5%; padding: 0.1%;">
+        <div class="form-group" >
+            <label for="fromdt">From</label>
+                <input id="fromdt" type="datetime-local"  />
+            <label for="myCheck"></label>
+                <input id="myCheck" type="checkbox" />
+            <label for="todt">To</label>
+                <input id="todt" type="datetime-local" />
+
             <a id="myLink" title="Search loan journey for the selected time frame"
-               href="#" onclick="loadPage()"><i class="bi bi-search" style="padding-left: 0.5%;"></i></a>
-               </div>
-        
+            href="#" onclick="loadPage()"><i class="bi bi-search" style="padding-left: 0.5%;"></i></a>
+
+
+
+            <div class="form-check form-switch" style="float: right;">
+                <input type="checkbox" id="newCustomers" class="form-check-input">
+
             </div>
+            <label for="newCustomers" style="float: right; margin-right: 0.5%; ">New Customers</label>
+
+            <div class="form-check form-switch" style="float: right;">
+                <!-- <input class="form-check-input" type="checkbox" id="reloadCB" /> -->
+                <input type="checkbox" onclick="toggleAutoRefresh(this);" id="reloadCB" class="form-check-input">
+
+            </div>
+            <label for="reloadCB" style="float: right; margin-right: 0.5%; ">Reload</label>
         </div>
-    </div>
+    </div>  
     
     <div class="row">
         <div class="col-md-12 mb-3" style="height: 60%;">
@@ -50,25 +61,19 @@
                 <table
                 id="example"
                 class="table table-striped data-table"
-                style="width: 100%"
-              >
-                <!-- <thead>
-                  <tr>
-                    <th>evetTime</th>
-                    <th>lead_guid</th>
-                    <th>datadog link</th>
-                    <th>fullstory link</th>
-                  
-                  </tr>
-                </thead> -->
+                style="width: 100%">
                 </table>
-                  
-               
               </div>
             </div>
           </div>
         </div>
+
+        <!-- <div class="col-md-6 mb-3">
+            <iframe src="" name="myFrame"></iframe>
+        </div> -->
+
       </div>
+      
     </div>
      
 
@@ -84,10 +89,39 @@
             fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
             document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
             document.getElementById('todt').value = totime.toISOString().slice(0,16);   
+            var reloadCheckVal = [[${reloadCheck}]];
+            document.getElementById('reloadCB').checked = reloadCheckVal;
+            var newCustomersVal = [[${newCustomers}]];
+            document.getElementById('newCustomers').checked = newCustomersVal;
+            
             var dash = document.querySelector('#dashboard');
             dash.classList.add('active');
             var userJ = document.querySelector("#userJourney");
             userJ.classList.remove('active');
+
+            var reloading;
+
+            function checkReloading() {
+                if (window.location.hash=="#autoreload") {
+                    alert("checkReloading");
+                    reloading=setInterval(loadPage, 180000);
+                    document.getElementById("reloadCB").checked=true;
+                }
+            }
+
+            function toggleAutoRefresh(cb) {
+                alert("toggleAutoRefresh");
+                if (cb.checked) {
+                    window.location.replace("#autoreload");
+                    reloading=setInterval(loadPage, 180000);
+                } else {
+                    window.location.replace("#");
+                    clearInterval(reloading);
+                }
+            }
+
+            
+            window.onload=checkReloading;
 
 
             function loadPage(){ 
@@ -95,18 +129,15 @@
                 var fromdate = new Date(document.getElementById('fromdt').value);
                 var todate = new Date(document.getElementById('todt').value);
 
-                // var yourCheckbox = document.querySelector('#myCheck');
-                // if(yourCheckbox.checked){
-                //     var todate = new Date();
-                //     alert("to date is set to current time "+todate);
-                // }
+                var reloadCheckbox = document.getElementById('reloadCB');
+                var newCustomers = document.getElementById('newCustomers');
 
                 if(fromdate>todate){
                     alert("Please select proper from and to date");
                 }else{
                     $.ajax({
                         type : "GET",
-                        url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate),
+                        url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate)+"&reloadCheck="+reloadCheckbox.checked+"&newCustomers="+newCustomers.checked,
                         contentType: "application/json",
                         dataType: "html",
                         success: function(data) {     
@@ -119,25 +150,35 @@
 
             var yourCheckbox = document.querySelector('#myCheck');
             var yourDateField = document.querySelector('#todt');
+            var reloadField = document.getElementById('reloadCB');
+            var newCustomers = document.getElementById('newCustomers');
 
             // This function will update the date field's enabled/disabled
             // attribute, depending on if the yourCheckbox is checked
             function updateYourDateField() {
-                
-                if(yourCheckbox.checked) {
-                yourDateField.disabled = false;
-                }
-                else {
-                yourDateField.disabled = true;
-                }
+                    
+                    if(yourCheckbox.checked) {
+                        reloadField.checked=false;
+                        reloadField.disabled = true;
+                        yourDateField.disabled = false;
+                    }
+                    else {
+                        reloadField.disabled = false;
+                        yourDateField.disabled = true;
+                    }
             }
             
             // Add an event listener to the change event, that causes
             // the date field to be enabled/disabled when ever the checkbox
             // is clicked and the value changes
             yourCheckbox.addEventListener('change', function() {
-                
                 updateYourDateField();
+            })
+
+            newCustomers.addEventListener('change', function() {
+                if(newCustomers.checked){
+                    loadPage();
+                }
             })
  
             // Call this to ensure your date field is in correct state

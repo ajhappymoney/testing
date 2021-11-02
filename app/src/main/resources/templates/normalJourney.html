@@ -3,42 +3,59 @@
 
 <head>
     <object th:include="fragments/head :: head" th:remove="tag"></object>
+    <style>
+        table.dataTable tbody tr.selected {
+            color: white;
+            background-color: #eeeeee;
+        }
+    </style>
 </head>
 
 <body class="page-container-bg-solid" id="loadPage">
 <div th:include="fragments/topmenuheader :: header"></div>
 <div class="container-fluid page-body-wrapper">
     <div class= "row">
-        <div class="col-md-6 mb-3" style="height: 60%;">
+        <div class="col-md-12 mb-3">
             <div style="margin: 10px; width: 100%;">
                 <form id="search">
                     <div class="form-group">
-
-                        <label for="fromdt">From</label>
-                        <input type="datetime-local" class="form-control" id="fromdt" name="fromdt" >
-                        <label for="todt">To</label>
-                        <input type="datetime-local" class="form-control" id="todt" name="todt">
+                       
+                            <label for="fromdt">From</label>
+                                <input id="fromdt" name="Fromdt" type="datetime-local"  />
+                            <label for="todt">To</label>
+                                <input id="todt" name="todt"   type="datetime-local" />
+                            <button type="search" class="btn btn-primary">Search</button>
                     </div>
-
-                    <button type="search" class="btn btn-primary">Search</button>
                 </form>
             </div>
         </div>
     </div>
-    <div class="row" id="userJourneyGraph" style="display: none;">
-        <div class="col-md-12 mb-3" style="height: 60%;">
-            <div class="card h-100">
-                <div class="card-header">
-                    <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                    Normal Journey
-                </div>
+    <div class="row" >
+        <div class="col-md-6 mb-3" id="tablecontent" style="display:none">
+            <div class="card">
                 <div class="card-body">
-                    <div id="container" style="width:100%; height:100%;"></div>
+                    <div class="table-responsive">
+                        <table
+                                id="example"
+                                class="table table-striped data-table"
+                                style="width: 100%">
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="col-md-6 mb-3" style="height: 60%; display: none;" id="userJourneyGraph" >
+            <div class="card h-100">
+                 <div class="card-header">
+                     <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
+                     Normal Journey
+                 </div>
+                 <div class="card-body">
+                     <div id="container" style="width:100%; height:100%;"></div>
+                 </div>
+             </div>
+         </div>
     </div>
-</div></div>
 
 
 
@@ -55,21 +72,95 @@
         var totime;
         var fromtime;
         if ([[${todt}]] && [[${fromdt}]]){
+            alert("welcome");
             totime = new Date([[${todt}]]);
             fromtime = new Date([[${fromdt}]]);
             fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
-            document.getElementById("userJourneyGraph").style.display="block";
+            var leadsList = [[${leadsList}]];
+            alert(leadsList);
+            tableFromJson(leadsList);
+            var seriesObj = [[${seriesObj}]];
+            var table = $('#example').DataTable();
+    
+            $('#example tbody').on( 'click', 'tr', function () {
+                var rowVal = table.row( this ).data();
+                alert(rowVal['lead']);
+                var graphDiv = document.getElementById("userJourneyGraph");
+                if (graphDiv.style.display === "none") {
+                    graphDiv.style.display = "block";
+                }
+                drawlineChart(seriesObj[rowVal['lead']]);
+
+            } );
+
+            // document.getElementById("userJourneyGraph").style.display="block";
         }else{
             totime = new Date();
             fromtime = new Date();
             fromtime.setMinutes(fromtime.getMinutes() - 60 - fromtime.getTimezoneOffset());
-            document.getElementById("userJourneyGraph").style.display="none";
+            // document.getElementById("userJourneyGraph").style.display="none";
 
         }
+
+        
+        
         totime.setMinutes(totime.getMinutes() - totime.getTimezoneOffset());
 
         document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
         document.getElementById('todt').value = totime.toISOString().slice(0,16);
+
+        function tableFromJson(data) {
+
+            var tablecontent = document.getElementById("tablecontent");
+
+            var fromdate = new Date(document.getElementById('fromdt').value);
+            var todate = new Date(document.getElementById('todt').value);
+
+            if (tablecontent.style.display === "none") {
+                tablecontent.style.display = "block";
+            }
+
+            // $("#example").dataTable().fnDestroy();
+            var cols = [];
+
+            // for (var i = 0; i < data.length; i++) {
+            //     var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
+            //     // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
+                    
+            //     // }
+            //     var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
+            //     var date = new Date(data[i]["eventTime"]);
+
+            //     data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
+            //     data[i]["datadog link"] = datadoglink;
+            //     data[i]["fullstory link"] = fullstorylink;
+            // }
+
+            var exampleRecord = data[0];
+
+            //get keys in object. This will only work if your statement remains true that all objects have identical keys
+            var keys = Object.keys(exampleRecord);
+
+            //for each key, add a column definition
+            keys.forEach(function(k) {
+                cols.push({
+                title: k,
+                data: k
+                //optionally do some type detection here for render function
+                });
+            });
+
+            //initialize DataTables
+            var table = $('#example').DataTable({
+                destroy: true,
+                columns: cols
+            });
+            table.clear();
+
+            //add data and draw
+            table.rows.add(data).draw();
+
+        }
 
 
         $("#search").submit(function(e) {
@@ -101,11 +192,12 @@
                 }
             });
 
-            drawlineChart();
+            
         });
 
 
-        function drawlineChart() {
+        function drawlineChart(seriesData) {
+            alert(seriesData);
             var page = [[${funnelPage}]];
             // var simpleJsonObject =[[${simpleJsonObject}]];
             var userJourneyLineChart = Highcharts.chart('container', {
@@ -157,7 +249,7 @@
                 categories: [[${funnelPage}]]
             },
 
-                series: [[${seriesArray}]]
+                series: seriesData
 
 
             });

@@ -109,7 +109,6 @@
 
         });
         
-   
         $(function () {
             Highcharts.setOptions({
                 lang: {
@@ -117,29 +116,102 @@
                     thousandsSep: ','
                 }
             });
-
-            drawlineChart();
         });
 
+        var clone_container = null;
+        var clone_tooltip = null;
 
-        function drawlineChart() {
-            var page = [[${funnelPage}]];
-            // var simpleJsonObject =[[${simpleJsonObject}]];
-            var userJourneyLineChart = Highcharts.chart('container', {
-               chart:{
-                   type: 'scatter'
-               },
-                title: {
-                        text: ''
-                    },
+        function hasClass(element,cls) {
+            return element.classList.contains(cls);
+        }
 
+        function clean_tooltip() {
+            if (clone_container) {  chart.container.firstChild.removeChild(clone_container);
+                clone_container = null;
+            }
+
+            if (clone_tooltip) {
+                chart.container.removeChild(clone_tooltip);
+                clone_tooltip = null;
+            }
+        }
+
+
+        // function drawlineChart() {
+        var page = [[${funnelPage}]];
+        // var simpleJsonObject =[[${simpleJsonObject}]];
+        chart = Highcharts.chart('container', {
+            chart:{
+                type: 'scatter',
+                zoomType: 'xy',
+                events: {
+                    click: function(event) {
+                        clean_tooltip();
+                    }
+                }
+            },
+            title: {
+                    text: ''
+            },
             plotOptions: {
-                series: {
-                    allowPointSelect: true,
+                scatter: {
                     marker: {
-                        enabled: true,
-                        value: 'x'
-                        
+                        radius: 5,
+                        states: {
+                                hover: {
+                                    enabled: true,
+                                    lineColor: 'rgb(255,255,255)'
+                                    }
+                            }
+                        },
+                        states: {
+                            hover: {
+                                marker: {
+                                    enabled: false
+                                }
+                            }
+                        }
+                },
+                series: {
+                    stickyTracking: false,
+                    cursor: 'pointer',
+                    point: {
+                        events: {
+                        click: function () {
+                            clean_tooltip();
+                            
+                            var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+                            var orig_container = hc_tooltip[0];
+                            var orig_tooltip = hc_tooltip[1];
+
+                            clone_tooltip = orig_tooltip.cloneNode(true);
+                            clone_tooltip.classList.remove("invisible");
+                            clone_tooltip.classList.add("clone");
+
+                            clone_container = this.series.chart.tooltip.label.element.cloneNode(true);
+                            clone_container.classList.remove("invisible");
+                            clone_container.classList.add("clone");
+
+                            chart.container.firstChild.appendChild(clone_container);
+                            chart.container.appendChild(clone_tooltip);
+                        },
+                        mouseOver: function() {
+                            var orig_tooltip, orig_container;
+                            var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+
+                            orig_container = hc_tooltip[0];
+                            orig_tooltip = hc_tooltip[1];
+
+                            if (orig_container && !hasClass(orig_container,"clone")){
+                            orig_container.classList.add("invisible");
+                            }
+
+                            if (orig_tooltip && !hasClass(orig_tooltip,"clone")) {
+                            orig_tooltip.classList.add("invisible");
+                            }
+                        }
+                    
+                        }
                     }
                 }
             },
@@ -183,13 +255,8 @@
                 },
                 categories: [[${funnelPage}]]
             },
-
-                series: [[${seriesArray}]]
-
-
-            });
-
-        }
+            series: [[${seriesArray}]]
+        });
 
         /*]]>*/
     </script>
