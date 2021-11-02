@@ -150,7 +150,6 @@ public class UserJourneyHelper {
         normalJourneyResObject.put("leadsList",leadsList);
         normalJourneyResObject.put("seriesObj", seriesObj);
 
-        System.out.println("normalJourneyResObject = " + normalJourneyResObject.get("seriesObj"));
         return normalJourneyResObject;
     }
 

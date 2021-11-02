@@ -57,8 +57,10 @@ public class DashboardController {
         }
 
         if(todt==null || reloadCheck) {
-            System.out.println("Setting totime to now");
             toDate = OffsetDateTime.now(ZoneOffset.UTC);
+            if(reloadCheck) {
+                logger.info("AutoReload page. Setting toDate to now");
+            }
         }else {
             Long toEPoch = Long.parseLong(todt);
             toDate = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);

@@ -76,7 +76,6 @@ public class DashboardHelper {
                      if (guid.length() < 10) continue;
                      guids2 += guid + " OR ";
                  }
-                 System.out.println("allGuids = " + allGuids);
                  guids2 = guids2.substring(0, guids2.length() - 4);
                  members = datadogAdaptor.getMemberId(fromDate, toDate, guids2);
              }else{
