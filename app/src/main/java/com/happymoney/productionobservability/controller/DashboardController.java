@@ -34,9 +34,20 @@ public class DashboardController {
     Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
     @RequestMapping(value = "/chart", method=RequestMethod.GET)
-    public String chart(@RequestParam(required = false, name = "fromdt") String fromdt, @RequestParam(required = false, name = "todt") String todt , Model model) throws ParseException {
+    public String chart(@RequestParam(required = false, name = "fromdt") String fromdt, @RequestParam(required = false, name = "todt") String todt,
+            @RequestParam(required = false, name = "reloadCheck") Boolean reloadCheck,
+                        @RequestParam(required = false, name = "newCustomers") Boolean newCustomers,
+                        Model model) throws ParseException {
         OffsetDateTime fromDate;
         OffsetDateTime toDate;
+
+        if(reloadCheck==null){
+            reloadCheck = false;
+        }
+
+        if(newCustomers==null){
+            newCustomers = false;
+        }
 
         if(fromdt==null) {
             fromDate = OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(2);
@@ -45,51 +56,58 @@ public class DashboardController {
             fromDate = OffsetDateTime.ofInstant(new Timestamp(fromEpoch).toInstant(), ZoneOffset.UTC);
         }
 
-        if(todt==null) {
+        if(todt==null || reloadCheck) {
             toDate = OffsetDateTime.now(ZoneOffset.UTC);
+            if(reloadCheck) {
+                logger.info("AutoReload page. Setting toDate to now");
+            }
         }else {
             Long toEPoch = Long.parseLong(todt);
             toDate = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
         }
-        logger.info("Loading dashboard for loan journey from = "+fromDate+" to = "+toDate);
-        JsonObject result = dashboardService.getPageCount(fromDate, toDate);
+        logger.info("Loading dashboard for loan journey from = "+fromDate+" to = "+toDate + " loading new customer data ="+newCustomers);
+        JsonObject result = dashboardService.getPageCount(fromDate, toDate, newCustomers);
+        if(!(result==null)) {
 
-        ArrayList<String> pageNames = new ArrayList<String>();
-        ArrayList<Integer> counterValue = new ArrayList<Integer>();
-        JSONObject simpleJsonObject = new JSONObject();
+            ArrayList<String> pageNames = new ArrayList<String>();
+            ArrayList<Integer> counterValue = new ArrayList<Integer>();
+            JSONObject simpleJsonObject = new JSONObject();
 
-        ArrayList<HashMap<String, Object>> seriesDataArray = new ArrayList<HashMap<String, Object>>();
-        HashMap<String, Object> seriesDataObject = new HashMap<String, Object>();
-        JsonObject leadidsObject = new JsonObject();
-        JSONParser parser = new JSONParser();
+            ArrayList<HashMap<String, Object>> seriesDataArray = new ArrayList<HashMap<String, Object>>();
+            HashMap<String, Object> seriesDataObject = new HashMap<String, Object>();
+            JsonObject leadidsObject = new JsonObject();
+            JSONParser parser = new JSONParser();
 
-        Set<Map.Entry<String, JsonElement>> entrySet = result.entrySet();
-        for(Map.Entry<String,JsonElement> entry : entrySet){
+            Set<Map.Entry<String, JsonElement>> entrySet = result.entrySet();
+            for (Map.Entry<String, JsonElement> entry : entrySet) {
 
-            pageNames.add(entry.getKey().toString());
+                pageNames.add(entry.getKey().toString());
 
-            JsonObject keyvalue = result.getAsJsonObject(entry.getKey());
+                JsonObject keyvalue = result.getAsJsonObject(entry.getKey());
 
-            counterValue.add(keyvalue.get("count").getAsInt());
-            leadidsObject.add(entry.getKey(), keyvalue.get("resultAttributes"));
-            String JSONBody2 = new Gson().toJson(keyvalue.get("resultAttributes"));
+                counterValue.add(keyvalue.get("count").getAsInt());
+                leadidsObject.add(entry.getKey(), keyvalue.get("resultAttributes"));
+                String JSONBody2 = new Gson().toJson(keyvalue.get("resultAttributes"));
 
-            JSONArray resultAttributeArray = (JSONArray)parser.parse(JSONBody2);
+                JSONArray resultAttributeArray = (JSONArray) parser.parse(JSONBody2);
 
-            simpleJsonObject.put(entry.getKey(), resultAttributeArray);
+                simpleJsonObject.put(entry.getKey(), resultAttributeArray);
 
+            }
+
+            seriesDataObject.put("data", counterValue);
+            seriesDataObject.put("name", "Funnel page");
+
+            seriesDataArray.add(seriesDataObject);
+
+            model.addAttribute("counterValue", counterValue);
+            model.addAttribute("simpleJsonObject", simpleJsonObject);
+            model.addAttribute("pageNames", pageNames);
+            model.addAttribute("fromdt", fromDate);
+            model.addAttribute("todt", toDate);
+            model.addAttribute("reloadCheck", reloadCheck);
+            model.addAttribute("newCustomers", newCustomers);
         }
-
-        seriesDataObject.put("data", counterValue);
-        seriesDataObject.put("name", "Funnel page");
-
-        seriesDataArray.add(seriesDataObject);
-
-        model.addAttribute("counterValue", counterValue);
-        model.addAttribute("simpleJsonObject", simpleJsonObject);
-        model.addAttribute("pageNames", pageNames);
-        model.addAttribute("fromdt", fromDate);
-        model.addAttribute("todt", toDate);
         if(fromdt==null && todt==null) {
             return "chart";
         }else {
