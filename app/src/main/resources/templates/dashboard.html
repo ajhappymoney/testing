@@ -95,14 +95,14 @@
 
                 function checkReloading() {
                     if (window.location.hash=="#autoreload") {
-                        alert("checkReloading");
+                        
                         reloading=setInterval(loadPage, 180000);
                         document.getElementById("reloadCB").checked=true;
                     }
                 }
 
                 function toggleAutoRefresh(cb) {
-                    alert("toggleAutoRefresh");
+                    
                     if (cb.checked) {
                         window.location.replace("#autoreload");
                         reloading=setInterval(loadPage, 180000);

@@ -65,7 +65,7 @@ public class DashboardController {
             Long toEPoch = Long.parseLong(todt);
             toDate = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
         }
-        logger.info("Loading dashboard for loan journey from = "+fromDate+" to = "+toDate);
+        logger.info("Loading dashboard for loan journey from = "+fromDate+" to = "+toDate + " loading new customer data ="+newCustomers);
         JsonObject result = dashboardService.getPageCount(fromDate, toDate, newCustomers);
         if(!(result==null)) {
 
