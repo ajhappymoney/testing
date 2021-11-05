@@ -1,5 +1,5 @@
     <div th:include="fragments/topmenuheader :: header"></div>
-    <div class="container-fluid page-body-wrapper">
+    <div class="container-fluid page-body-wrapper" >
         <div class= "row" style="margin: 0.5%; padding: 0.1%;">
             <div class="form-group" >
                 <label for="fromdt">From</label>
@@ -34,7 +34,7 @@
                 <div class="card h-100">
                     <div class="card-header">
                         <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                        Loan Journey<span class="me-2"><i class="bi bi-info-circle-fill" style="padding-left: 0.5%;" title="Displays bar graph of all the leads landing on each funnel page over a selected time slot"></i></span>
+                        Loan Funnel Dashboard<span class="me-2"><i class="bi bi-info-circle-fill" style="padding-left: 0.5%;" title="Displays bar graph of all the leads landing on each funnel page over a selected time slot"></i></span>
                     </div>
                     <div class="card-body">
                         <div id="salesByType" style="width:100%; height:100%;"></div>
@@ -59,10 +59,6 @@
                 </div>
                 </div>
             </div>
-
-            <!-- <div class="col-md-6 mb-3">
-                <iframe src="" name="myFrame"></iframe>
-            </div> -->
 
             </div>
             
@@ -95,14 +91,12 @@
 
                 function checkReloading() {
                     if (window.location.hash=="#autoreload") {
-                        
                         reloading=setInterval(loadPage, 180000);
                         document.getElementById("reloadCB").checked=true;
                     }
                 }
 
                 function toggleAutoRefresh(cb) {
-                    
                     if (cb.checked) {
                         window.location.replace("#autoreload");
                         reloading=setInterval(loadPage, 180000);
@@ -168,9 +162,9 @@
                 })
 
                 newCustomers.addEventListener('change', function() {
-                    if(newCustomers.checked){
-                        loadPage();
-                    }
+                    // if(newCustomers.checked){
+                    loadPage();
+                    // }
                 })
 
                 // Call this to ensure your date field is in correct state

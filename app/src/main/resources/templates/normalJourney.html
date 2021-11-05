@@ -11,7 +11,7 @@
     </style>
 </head>
 
-<body class="page-container-bg-solid" id="loadPage">
+<body class="page-container-bg-solid" id="loadPage" style="background-color:#ffffe0;">
 <div th:include="fragments/topmenuheader :: header"></div>
 <div class="container-fluid page-body-wrapper">
     <div class= "row">
@@ -48,7 +48,7 @@
             <div class="card h-100">
                  <div class="card-header">
                      <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                     Normal Journey
+                     Unusual Journey
                  </div>
                  <div class="card-body">
                      <div id="container" style="width:100%; height:100%;"></div>
@@ -72,19 +72,18 @@
         var totime;
         var fromtime;
         if ([[${todt}]] && [[${fromdt}]]){
-            alert("welcome");
             totime = new Date([[${todt}]]);
             fromtime = new Date([[${fromdt}]]);
             fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
             var leadsList = [[${leadsList}]];
-            alert(leadsList);
+            // alert(leadsList);
             tableFromJson(leadsList);
             var seriesObj = [[${seriesObj}]];
             var table = $('#example').DataTable();
     
             $('#example tbody').on( 'click', 'tr', function () {
                 var rowVal = table.row( this ).data();
-                alert(rowVal['lead']);
+                // alert(rowVal['lead']);
                 var graphDiv = document.getElementById("userJourneyGraph");
                 if (graphDiv.style.display === "none") {
                     graphDiv.style.display = "block";
@@ -123,19 +122,6 @@
             // $("#example").dataTable().fnDestroy();
             var cols = [];
 
-            // for (var i = 0; i < data.length; i++) {
-            //     var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
-            //     // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
-                    
-            //     // }
-            //     var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
-            //     var date = new Date(data[i]["eventTime"]);
-
-            //     data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
-            //     data[i]["datadog link"] = datadoglink;
-            //     data[i]["fullstory link"] = fullstorylink;
-            // }
-
             var exampleRecord = data[0];
 
             //get keys in object. This will only work if your statement remains true that all objects have identical keys
@@ -168,19 +154,33 @@
             e.preventDefault(); // avoid to execute the actual submit of the form.
 
             var form = $(this);
-            // var url = form.attr('action');
 
             var fromdate = new Date(document.getElementById('fromdt').value);
             var todate = new Date(document.getElementById('todt').value);
 
-            $.ajax({
-                type: "GET",
-                url: "getNormalJourney?fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
-                dataType: "html",
-                success: function(data) {
-                    $("body").html(data);
-                }
-            });
+            var diff = new Date(fromdate.getTime() - todate.getTime());
+
+            console.log(diff.getMinutes()); 
+            var diffMS = todate - fromdate;    
+            console.log(diffMS + ' ms');
+
+            var diffS = diffMS /60000;    
+
+            // var diffM = diffS / 60;
+            // console.log(diffM + ' minutes');
+            if(diffS>480){
+                alert("Please select 8 hour time window to search Unusual Loan journey data.")
+            }else{
+
+                $.ajax({
+                    type: "GET",
+                    url: "getUnusualJourney?fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
+                    dataType: "html",
+                    success: function(data) {
+                        $("body").html(data);
+                    }
+                });
+            }
         });
 
 
@@ -197,7 +197,7 @@
 
 
         function drawlineChart(seriesData) {
-            alert(seriesData);
+            // alert(seriesData);
             var page = [[${funnelPage}]];
             // var simpleJsonObject =[[${simpleJsonObject}]];
             var userJourneyLineChart = Highcharts.chart('container', {

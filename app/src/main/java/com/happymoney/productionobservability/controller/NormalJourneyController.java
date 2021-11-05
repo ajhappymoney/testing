@@ -1,6 +1,7 @@
 package com.happymoney.productionobservability.controller;
 
 
+import com.happymoney.productionobservability.helper.ProcessTimeHelper;
 import com.happymoney.productionobservability.service.NormalJourneyService;
 import com.happymoney.productionobservability.service.UserJourneyService;
 import org.json.simple.JSONArray;
@@ -26,18 +27,22 @@ public class NormalJourneyController {
     @Autowired
     private NormalJourneyService normalJourneyService;
 
+    @Autowired
+    private ProcessTimeHelper processTimeHelper;
+
     Logger logger = LoggerFactory.getLogger(NormalJourneyController.class);
 
-    @RequestMapping(value = "/normalJourney", method= RequestMethod.GET)
+    @RequestMapping(value = "/unusualJourney", method= RequestMethod.GET)
     public String userJourney() {
         return "normalJourney";
     }
 
-    @RequestMapping(value="/getNormalJourney", method = RequestMethod.GET)
+    @RequestMapping(value="/getUnusualJourney", method = RequestMethod.GET)
     public String getNormalJourney(@RequestParam("fromdate") String fromdate,
                                  @RequestParam("todate") String todate, Model model) throws ParseException {
-        logger.info("Loading user Journey information between fromdt = " + fromdate + ", todt = " + todate);
+        String requestName = "getUnusualJourney";
 
+        Long startTime = processTimeHelper.getStartTime();
 
         OffsetDateTime fromOffsetDateTime;
         OffsetDateTime toOffsetDateTime;
@@ -48,8 +53,11 @@ public class NormalJourneyController {
         Long toEPoch = Long.parseLong(todate);
         toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
+        logger.info("requestName:"+requestName+" Loading atypical journey information between fromDateTime = " + fromOffsetDateTime + ", toDateTime = " + toOffsetDateTime);
+
+
         JSONObject normalUserJourney = normalJourneyService.fetchUserJourneyData(fromOffsetDateTime,
-                toOffsetDateTime);
+                toOffsetDateTime, requestName);
 
         model.addAttribute("fromdt", fromOffsetDateTime);
         model.addAttribute("todt", toOffsetDateTime);
@@ -57,6 +65,7 @@ public class NormalJourneyController {
         model.addAttribute("funnelPage", normalUserJourney.get("funnelPage"));
         model.addAttribute("leadsList", normalUserJourney.get("leadsList"));
 
+        processTimeHelper.printProcessEndTime(startTime, "Unusual Journey" + " FromDateTime:"+fromOffsetDateTime +" ToDateTime:"+toOffsetDateTime);
         return "normalJourney";
 
     }
