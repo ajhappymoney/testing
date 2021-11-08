@@ -5,13 +5,15 @@
     <object th:include="fragments/head :: head" th:remove="tag"></object>
     <style>
         table.dataTable tbody tr.selected {
-            color: white;
-            background-color: #eeeeee;
+            font-weight: bold;
+            
+            color: #f4f0ec;
+            background-color: #0070ff;
         }
     </style>
 </head>
 
-<body class="page-container-bg-solid" id="loadPage" style="background-color:#ffffe0;">
+<body class="page-container-bg-solid" id="loadPage" >
 <div th:include="fragments/topmenuheader :: header"></div>
 <div class="container-fluid page-body-wrapper">
     <div class= "row">
@@ -83,12 +85,29 @@
     
             $('#example tbody').on( 'click', 'tr', function () {
                 var rowVal = table.row( this ).data();
-                // alert(rowVal['lead']);
+                
                 var graphDiv = document.getElementById("userJourneyGraph");
                 if (graphDiv.style.display === "none") {
                     graphDiv.style.display = "block";
                 }
+                if ( $(this).hasClass('selected') ) {
+                    $(this).removeClass('selected');
+                }
+                else {
+                    table.$('tr.selected').removeClass('selected');
+                    $(this).addClass('selected');
+                }
                 drawlineChart(seriesObj[rowVal['lead']]);
+
+                // var table = $('#example').DataTable();
+ 
+                
+                
+                
+            
+                // $('#button').click( function () {
+                //     table.row('.selected').remove().draw( false );
+                // } );
 
             } );
 
@@ -160,9 +179,9 @@
 
             var diff = new Date(fromdate.getTime() - todate.getTime());
 
-            console.log(diff.getMinutes()); 
+            // console.log(diff.getMinutes()); 
             var diffMS = todate - fromdate;    
-            console.log(diffMS + ' ms');
+            // console.log(diffMS + ' ms');
 
             var diffS = diffMS /60000;    
 
