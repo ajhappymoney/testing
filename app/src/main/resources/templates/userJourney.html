@@ -5,7 +5,7 @@
     <object th:include="fragments/head :: head" th:remove="tag"></object>
 </head>
 
-<body class="page-container-bg-solid" id="loadPage">
+<body class="page-container-bg-solid" id="loadPage" >
     <div th:include="fragments/topmenuheader :: header"></div>
       <div class="container-fluid page-body-wrapper">
         <div class= "row">
@@ -245,7 +245,7 @@
                     let series_name = `lead_ID: <b>${this.series.name}</b>`;
                     let points = `${day}, ${page[this.y]}`;
                     let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
-                    let total = `${series_name}<br>${points}<br>${link}`;
+                    let total = `${points}<br>${link}<br>${series_name}`;
                     return total;
                 },
             },

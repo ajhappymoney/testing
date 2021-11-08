@@ -33,9 +33,9 @@ public class DatadogAdaptor {
 
     Logger logger = LoggerFactory.getLogger(DatadogAdaptor.class);
 
-    public List<Log> getDatadogLogData(OffsetDateTime fromDate, OffsetDateTime toDate, Boolean newCustomers){
+    public List<Log> getDatadogLogData(OffsetDateTime fromDate, OffsetDateTime toDate, Boolean newCustomers, String requestName){
 
-        logger.info("Extracting Loan journey data from datadog between from = "+fromDate+" to = "+toDate);
+        logger.info("requestName:"+requestName+" Extracting Loan journey data from datadog between from = "+fromDate+" to = "+toDate);
 
         Map<String,Integer> auto = sortDataHelper.getPriorityMap();
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
@@ -49,8 +49,9 @@ public class DatadogAdaptor {
         }
         Integer pageLimit = 5000;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
+        Boolean pagination = false;
 
-        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, pagination, requestName);
         if(newCustomers){
             List<Log> finalList = new ArrayList<Log>();
             Set<String> allGuids = new HashSet<String>();
@@ -86,7 +87,7 @@ public class DatadogAdaptor {
                         counter = 0;
                         leadsQuery.append(")");
                         filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND " + leadsQuery.toString() + ")";
-                        List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+                        List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, false, requestName);
                         finalList.addAll(newCustomerRes);
                         leadsQuery.setLength(0);
                         leadsQuery.append("(");
@@ -96,7 +97,7 @@ public class DatadogAdaptor {
                 if (counter != 10) {
                     leadsQuery.append(")");
                     filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND " + leadsQuery.toString() + ")";
-                    List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+                    List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, false, requestName);
                     if(finalList.size()==0){
                         finalList = newCustomerRes;
                     }else {
@@ -111,13 +112,13 @@ public class DatadogAdaptor {
         }
     }
 
-    public Integer getMemberIdValue(OffsetDateTime fromDate, OffsetDateTime toDate, String guid){
+    public Integer getMemberIdValue(OffsetDateTime fromDate, OffsetDateTime toDate, String guid, String requestName){
 
         String filterQuery = "task_family:*_prod lead_guid member_id " + guid;
         Integer pageLimit = 50;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
 
-        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor);
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor, false, requestName);
         if(!(queryRes==null || queryRes.size()==0)) {
             String response = queryRes.get(0).toString();
             Pattern pattern3 = Pattern.compile("member_id(\\p{Punct})*(\\p{Space})*(\\d{3,11})(\\p{Space})*(\\p{Punct})?");
@@ -132,13 +133,13 @@ public class DatadogAdaptor {
         return null;
     }
 
-    public JsonObject getMemberId(OffsetDateTime fromDate, OffsetDateTime toDate, String guids){
+    public JsonObject getMemberId(OffsetDateTime fromDate, OffsetDateTime toDate, String guids, String requestName){
 
         JsonObject resJsonObject = new JsonObject();
         String filterQuery = "service:doppio-apply task_family:*prod @scrubbedMsgLogCopy.member_id:* (" + guids + ")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
-        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor);
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor, false, requestName + " Extracting member ID data.");
         if(!(queryRes==null || queryRes.size()==0)) {
             for (Log logmodel :
                     queryRes) {
@@ -155,14 +156,14 @@ public class DatadogAdaptor {
         return null;
     }
 
-    public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId){
+    public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId, String requestName){
         HashMap<String, HashMap<String, ArrayList<Long>>> recentEvents = new HashMap<String, HashMap<String, ArrayList<Long>>>();
         String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
 //        System.out.println("filterQuery = " + filterQuery );
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
 //        toOffsetDateTime = OffsetDateTime.now();
-        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromOffsetDateTime, toOffsetDateTime, pageLimit, pageCursor);
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromOffsetDateTime, toOffsetDateTime, pageLimit, pageCursor, false, requestName);
         if(!(queryRes==null)) {
             for (Log logmodel :
                     queryRes) {
@@ -199,9 +200,9 @@ public class DatadogAdaptor {
         return resJsonObject;
     }
 
-    public HashMap<String, HashMap<String, Long>> getNormalCheckLogData(OffsetDateTime fromDate, OffsetDateTime toDate) {
+    public HashMap<String, HashMap<String, Long>> getNormalCheckLogData(OffsetDateTime fromDate, OffsetDateTime toDate, String requestName) {
 
-        logger.info("Extracting Loan journey data from datadog between from = " + fromDate + " to = " + toDate);
+//        logger.info("requestName:"+requestName+" Extracting atypical journey data from datadog between from = " + fromDate + " to = " + toDate);
 
         Map<String, Integer> auto = sortDataHelper.getPriorityMap();
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
@@ -212,7 +213,7 @@ public class DatadogAdaptor {
         Integer pageLimit = 5000;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
 
-        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor);
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, true, requestName);
 
         if(!(queryRes==null || queryRes.size()==0)) {
             for (Log logmodel :
@@ -250,14 +251,14 @@ public class DatadogAdaptor {
         }
         return recentEvents;
     }
-    private List<Log> getDatadogResultData(String filterQuery, OffsetDateTime fromDate, OffsetDateTime toDate, Integer pageLimit, String pageCursor ){
+    private List<Log> getDatadogResultData(String filterQuery, OffsetDateTime fromDate, OffsetDateTime toDate, Integer pageLimit, String pageCursor, Boolean pagination, String requestName ){
         try{
             List<Log> finalList = new ArrayList<Log>();
             ApiClient datadogClient = datadogConnectionAdaptor.getDatadogApiClient();
             if(!(datadogClient==null)) {
                 LogsApi apiInstance = new LogsApi(datadogClient);
                 LogsSort sort = LogsSort.fromValue("timestamp"); // LogsSort | Order of logs in results.
-                logger.info("Calling listLogsGet api call filterFrom:"+fromDate+
+                logger.info("requestName:"+requestName+" Calling listLogsGet api call filterFrom:"+fromDate+
                         " filterTo:"+toDate+" sort:"+sort.toString()+" pageLimit:"+pageLimit);
                 try {
                     LogsListResponse result = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
@@ -268,24 +269,29 @@ public class DatadogAdaptor {
                             .pageLimit(pageLimit));
                     finalList = result.getData();
 //                    System.out.println("result "+ result);
-                    String afterPage = "";
-                    if(result.getMeta()!=null) {
-                        afterPage = result.getMeta().getPage().getAfter();
-                    }
-
-                    while(!afterPage.isEmpty()){
-                        LogsListResponse tempRes = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
-                                .filterQuery(filterQuery)
-                                .filterFrom(fromDate)
-                                .filterTo(toDate)
-                                .sort(sort)
-                                .pageLimit(pageLimit).pageCursor(afterPage));
-                        if(tempRes.getData().size()>0){
-                            finalList.addAll(tempRes.getData());
-                            afterPage = tempRes.getMeta().getPage().getAfter();
-                        }else{
-                            afterPage = "";
+                    if(pagination) {
+                        Integer count = 1;
+                        String afterPage = "";
+                        if (result.getMeta() != null) {
+                            afterPage = result.getMeta().getPage().getAfter();
                         }
+
+                        while (!afterPage.isEmpty()) {
+                            count+=1;
+                            LogsListResponse tempRes = apiInstance.listLogsGet(new LogsApi.ListLogsGetOptionalParameters()
+                                    .filterQuery(filterQuery)
+                                    .filterFrom(fromDate)
+                                    .filterTo(toDate)
+                                    .sort(sort)
+                                    .pageLimit(pageLimit).pageCursor(afterPage));
+                            if (tempRes.getData().size() > 0) {
+                                finalList.addAll(tempRes.getData());
+                                afterPage = tempRes.getMeta().getPage().getAfter();
+                            } else {
+                                afterPage = "";
+                            }
+                        }
+                        logger.info("requestName:"+requestName+" Number of datadog api calls(pagination):"+ count);
                     }
                     return finalList;
 

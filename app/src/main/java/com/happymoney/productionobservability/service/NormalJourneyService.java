@@ -19,9 +19,9 @@ public class NormalJourneyService {
     @Autowired
     private UserJourneyHelper userJourneyHelper;
 
-    public JSONObject fetchUserJourneyData(OffsetDateTime fromDate, OffsetDateTime toDate) {
+    public JSONObject fetchUserJourneyData(OffsetDateTime fromDate, OffsetDateTime toDate, String requestName) {
 
-        HashMap<String, HashMap<String, Long>> datadogRes = datadogAdaptor.getNormalCheckLogData(fromDate, toDate);
+        HashMap<String, HashMap<String, Long>> datadogRes = datadogAdaptor.getNormalCheckLogData(fromDate, toDate, requestName);
         JSONObject normalUserJourneyModelRes = userJourneyHelper.getNormalJourneyModelAttributes(datadogRes);
         return normalUserJourneyModelRes;
     }

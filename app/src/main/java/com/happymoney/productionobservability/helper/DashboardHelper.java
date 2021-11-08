@@ -25,8 +25,9 @@ public class DashboardHelper {
 
     Logger logger = LoggerFactory.getLogger(DashboardHelper.class);
 
-    public JsonObject processDashboardData(OffsetDateTime fromDate, OffsetDateTime toDate, List<Log> queryRes)
+    public JsonObject processDashboardData(OffsetDateTime fromDate, OffsetDateTime toDate, List<Log> queryRes, String requestName)
     {
+        logger.info("requestName:"+requestName+ " Processing Dashboard data");
          Map<String,Integer> auto = sortDataHelper.getPriorityMap();
          HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
 
@@ -77,7 +78,7 @@ public class DashboardHelper {
                      guids2 += guid + " OR ";
                  }
                  guids2 = guids2.substring(0, guids2.length() - 4);
-                 members = datadogAdaptor.getMemberId(fromDate, toDate, guids2);
+                 members = datadogAdaptor.getMemberId(fromDate, toDate, guids2, requestName);
              }else{
                  logger.info("No valid lead IDs found");
              }

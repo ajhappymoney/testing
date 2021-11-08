@@ -29,15 +29,15 @@ public class DashboardService
 
     Logger logger = LoggerFactory.getLogger(DashboardService.class);
 
-    public JsonObject getPageCount(OffsetDateTime fromDate, OffsetDateTime toDate, Boolean newCustomers) {
-        List<Log> datadogRes = datadogAdaptor.getDatadogLogData(fromDate, toDate, newCustomers);
-        return dashboardHelper.processDashboardData(fromDate, toDate, datadogRes);
+    public JsonObject getPageCount(OffsetDateTime fromDate, OffsetDateTime toDate, Boolean newCustomers, String requestName) {
+        List<Log> datadogRes = datadogAdaptor.getDatadogLogData(fromDate, toDate, newCustomers, requestName);
+        return dashboardHelper.processDashboardData(fromDate, toDate, datadogRes, requestName);
     }
 
-    public String getFullStoryLink(String leadGUid, String memberId, String fromDate, String toDate){
+    public String getFullStoryLink(String leadGUid, String memberId, String fromDate, String toDate, String requestName){
 //        FullStoryAdapter fullStoryAdapter = new FullStoryAdapter();
 
-        String sessionString = fullStoryAdapter.getSession(leadGUid, memberId, fromDate, toDate);
+        String sessionString = fullStoryAdapter.getSession(leadGUid, memberId, fromDate, toDate, requestName);
 
         return sessionString;
     }
