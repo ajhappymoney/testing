@@ -91,15 +91,21 @@
             var leadGUid = document.getElementById('leadId').value;
 
             var splitName = leadGUid.split(",");
-            if(splitName.length>5){
+            if(fromdate>todate){
+                alert("Please select proper from and to date");
+            }else if(splitName.length>5){
                 alert("Accepts max 5 leadIds");
             }else{
                 $.ajax({
                     type: "GET",
                     url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
-                    dataType: "html",
+                    dataType: "json",
                     success: function(data) {     
-                        $("body").html(data);
+                        var graphDiv = document.getElementById("userJourneyGraph");
+                        if (graphDiv.style.display === "none") {
+                            graphDiv.style.display = "block";
+                        }
+                        drawlineChart(data["seriesArray"], data["funnelPage"]);
                     }
                     });
             }
@@ -120,63 +126,125 @@
         });
 
 
-        function drawlineChart() {
-            var page = [[${funnelPage}]];
-            // var simpleJsonObject =[[${simpleJsonObject}]];
-            var userJourneyLineChart = Highcharts.chart('container', {
-               chart:{
-                   type: 'scatter'
-               },
+        function drawlineChart(seriesData, funnelPage) {
+            var page = funnelPage;
+            chart = Highcharts.chart('container', {
+                chart:{
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        click: function(event) {
+                            clean_tooltip();
+                        }
+                    }
+                },
                 title: {
                         text: ''
-                    },
-
-            plotOptions: {
-                series: {
-                    allowPointSelect: true,
-                    marker: {
-                        enabled: true,
-                        value: 'x'
-                        
-                    }
-                }
-            },
-
-            xAxis: {
-                type: 'datetime',
-                    labels: {
-                        step: 2,
-                        rotation: -45,
-                        formatter: function() {
-                                return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
-                        }
-                    },
-                    startOnTick: true,
-                    endOnTick: true,
-                    showLastLabel: true,
-            },
-            tooltip: {
-                formatter: function() {
-                    var chart = Highcharts.charts[0],
-                        weekdays = chart.options.lang.weekdays,
-                        day = new Date(this.x);
-
-                    return day + ': ' + page[this.y];
-                }
-            },
-                
-                yAxis: {
-                title: {
-                    text: 'Funnel Page'
                 },
-                categories: [[${funnelPage}]]
-            },
+                plotOptions: {
+                    scatter: {
+                        marker: {
+                            radius: 5,
+                            states: {
+                                    hover: {
+                                        enabled: true,
+                                        lineColor: 'rgb(255,255,255)'
+                                        }
+                                }
+                            },
+                            states: {
+                                hover: {
+                                    marker: {
+                                        enabled: false
+                                    }
+                                }
+                            }
+                    },
+                    series: {
+                        stickyTracking: false,
+                        cursor: 'pointer',
+                        point: {
+                            events: {
+                            click: function () {
+                                clean_tooltip();
+                                
+                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+                                var orig_container = hc_tooltip[0];
+                                var orig_tooltip = hc_tooltip[1];
 
-                series: [[${seriesArray}]]
+                                clone_tooltip = orig_tooltip.cloneNode(true);
+                                clone_tooltip.classList.remove("invisible");
+                                clone_tooltip.classList.add("clone");
 
+                                clone_container = this.series.chart.tooltip.label.element.cloneNode(true);
+                                clone_container.classList.remove("invisible");
+                                clone_container.classList.add("clone");
 
+                                chart.container.firstChild.appendChild(clone_container);
+                                chart.container.appendChild(clone_tooltip);
+                            },
+                            mouseOver: function() {
+                                var orig_tooltip, orig_container;
+                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+
+                                orig_container = hc_tooltip[0];
+                                orig_tooltip = hc_tooltip[1];
+
+                                if (orig_container && !hasClass(orig_container,"clone")){
+                                orig_container.classList.add("invisible");
+                                }
+
+                                if (orig_tooltip && !hasClass(orig_tooltip,"clone")) {
+                                orig_tooltip.classList.add("invisible");
+                                }
+                            }
+                        
+                            }
+                        }
+                    }
+                },
+
+                xAxis: {
+                    type: 'datetime',
+                        labels: {
+                            step: 2,
+                            rotation: -45,
+                            formatter: function() {
+                                    return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
+                            }
+                        },
+                        startOnTick: true,
+                        endOnTick: true,
+                        showLastLabel: true,
+                },
+                tooltip: {
+                    stickOnContact: true,
+                    hideDelay: 99999999,
+                    useHTML: true,
+                    style: {
+                        pointerEvents: 'auto'
+                    },
+                    formatter: function() {
+                        var fromdate = new Date(document.getElementById('fromdt').value);
+                        var todate = new Date(document.getElementById('todt').value);
+                        // var chart = Highcharts.charts[0],
+                        // weekdays = chart.options.lang.weekdays,
+                        day = new Date(this.x);
+                        let series_name = `lead_ID: <b>${this.series.name}</b>`;
+                        let points = `${day}, ${page[this.y]}`;
+                        let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
+                        let total = `${points}<br>${link}<br>${series_name}`;
+                        return total;
+                    },
+                },
+                yAxis: {
+                    title: {
+                        text: 'Funnel Page'
+                    },
+                    categories: funnelPage
+                },
+                series: seriesData
             });
-
         }
 
         /*]]>*/

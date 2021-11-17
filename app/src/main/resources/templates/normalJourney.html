@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <object th:include="fragments/head :: head" th:remove="tag"></object>
+    <style>
+        table.dataTable tbody tr.selected {
+            font-weight: bold;
+            color: #f4f0ec;
+            background-color: #0070ff;
+        }
+
+        .red {
+            background-color: #FDAB9F !important;
+        }
+        .green {
+            background-color: #9dc183 !important;
+        }
+    </style>
+</head>
+
+<body class="page-container-bg-solid" id="loadPage" >
+<div th:include="fragments/topmenuheader :: header"></div>
+<div class="container-fluid page-body-wrapper">
+    <div class= "row">
+        <div class="col-md-12 mb-3">
+            <div style="margin: 10px; width: 100%;">
+                <form id="search">
+                    <div class="form-group">
+                       
+                            <label for="fromdt">From</label>
+                                <input id="fromdt" name="Fromdt" type="datetime-local"  />
+                            <label for="todt">To</label>
+                                <input id="todt" name="todt"   type="datetime-local" />
+                            <button type="search" class="btn btn-primary">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="row" >
+        <div class="col-md-6 mb-3" id="tablecontent" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <span id="tableHeader"><i class="bi bi-table me-2"></i>Lead Journey Stats</span> 
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table
+                                id="example"
+                                class="table table-striped data-table"
+                                style="width: 100%">
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3" id="secondarytablecontent" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <span id="tablename"><i class="bi bi-table me-2"></i></span> 
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table
+                                id="exampletest"
+                                class="table table-striped data-table"
+                                style="width: 100%">
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" >
+            <div class="col-md-12 mb-3" style="height: 60%; display: none;" id="userJourneyGraph" >
+                <div class="card h-100">
+                     <div class="card-header">
+                         <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
+                         Lead Journey
+                     </div>
+                     <div class="card-body">
+                         <div id="container" style="width:100%; height:100%;"></div>
+                     </div>
+                 </div>
+             </div>
+        </div>
+        
+    </div>
+
+
+
+
+<!-- <div th:include="fragments/homefooter :: footer"></div>s -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+        var dash = document.querySelector('#dashboard');
+        dash.classList.remove('active');
+        var userJ = document.querySelector("#userJourney");
+        userJ.classList.remove('active');
+        var normalJ = document.querySelector("#normalJourney");
+        normalJ.classList.add('active');
+        var totime;
+        var fromtime;
+        var newSelection = true;
+        if ([[${todt}]] && [[${fromdt}]]){
+            totime = new Date([[${todt}]]);
+            fromtime = new Date([[${fromdt}]]);
+            fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
+
+            var tableJsonDataArray = [[${tableJsonDataArray}]];
+            tableFromJson(tableJsonDataArray);
+            var table = $('#example').DataTable();
+            var exampleTestTable;
+            
+    
+            $('#example tbody').on( 'click', 'tr', function () {
+                newSelection = true;
+                var rowVal = table.row( this ).data();
+                
+                if ( $(this).hasClass('selected') ) {
+                    $(this).removeClass('selected');
+                }
+                else {
+                    table.$('tr.selected').removeClass('selected');
+                    $(this).addClass('selected');
+                }
+                
+
+                createSecondaryDataTable(rowVal['leadsArrayList'], rowVal['From'], rowVal['To']);
+
+              
+                if(newSelection){
+                    exampleTestTable = $('#exampletest').DataTable();
+                }
+
+                $('#exampletest tbody').on('click', 'tr', function () {
+                    var rowData = exampleTestTable.row( this ).data();
+                    var graphDiv = document.getElementById("userJourneyGraph");
+                    if (graphDiv.style.display === "none") {
+                        graphDiv.style.display = "block";
+                    }
+                    
+                    exampleTestTable.$('tr.selected').removeClass('selected');
+                    $(this).addClass('selected');
+
+                    var fromdate = new Date(document.getElementById('fromdt').value);
+                    var todate = new Date(document.getElementById('todt').value);
+                    var lead = rowData['leadID'];
+
+                    $.ajax({
+                    type: "GET",
+                    url: "getLeadJourney?fromdate="+Date.parse(fromdate)+"&leadID="+lead,
+                    // data: JSON.stringify(getLeadJourney),
+                    // dataType: 'json',
+                    dataType: "json",
+                    success: function(data) {
+                        drawlineChart(data["seriesArray"], data["funnelPage"]);
+                        }
+                    });
+                    newSelection = false;
+
+                } );
+
+            } );
+
+            
+
+        }else{
+            totime = new Date();
+            fromtime = new Date();
+            fromtime.setMinutes(fromtime.getMinutes() - 60 - fromtime.getTimezoneOffset());
+
+        }
+
+        
+        
+        totime.setMinutes(totime.getMinutes() - totime.getTimezoneOffset());
+
+        document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
+        document.getElementById('todt').value = totime.toISOString().slice(0,16);
+
+        function createSecondaryDataTable(data, fromPage , toPage){
+
+            var tablecontent = document.getElementById("secondarytablecontent");
+
+            if (tablecontent.style.display === "none") {
+                tablecontent.style.display = "block";
+                
+            }
+
+            var divShowData = document.getElementById('tablename');
+            var tableName = fromPage +" -> "+toPage;
+            divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(tableName);
+
+            // $("#example").dataTable().fnDestroy();
+            var cols = [];
+
+            var exampleRecord = data[0];
+
+            //get keys in object. This will only work if your statement remains true that all objects have identical keys
+            var keys = Object.keys(exampleRecord);
+
+            //for each key, add a column definition
+            keys.forEach(function(k) {
+                cols.push({
+                title: k,
+                data: k
+                //optionally do some type detection here for render function
+                });
+            });
+
+            //initialize DataTables
+            var exampletestTable = $('#exampletest').DataTable({
+                destroy: true,
+                columns: cols
+            });
+            exampletestTable.clear();
+
+            //add data and draw
+            exampletestTable.rows.add(data).draw();
+            
+
+        }
+
+        function tableFromJson(data) {
+
+            var tablecontent = document.getElementById("tablecontent");
+
+            if (tablecontent.style.display === "none") {
+                tablecontent.style.display = "block";
+            }
+
+            // $("#example").dataTable().fnDestroy();
+            var cols = [];
+
+            var exampleRecord = data[0];
+
+            //get keys in object. This will only work if your statement remains true that all objects have identical keys
+            var keys = Object.keys(exampleRecord);
+            keys=["From","To","Count","Percantage","color","leadsArrayList","fromPriority","toPriority"];
+
+            //for each key, add a column definition
+            keys.forEach(function(k) {
+                cols.push({
+                title: k,
+                data: k
+                //optionally do some type detection here for render function
+                });
+            });
+            // alert(cols[0] +" "+ cols[1]);
+
+            //initialize DataTables
+            var table = $('#example').DataTable({
+                destroy: true,
+                columns: cols,
+                "createdRow": function( row, data, dataIndex){
+                    if( data["color"] ==  `red`){
+                        $(row).addClass('red');
+                    }else if (data["color"] ==  `green`) {
+                        $(row).addClass('green');
+                    } 
+                },
+                "columnDefs": [
+                    {
+                        "targets": [4],
+                        "visible": false,
+                        "searchable": true
+                    },
+                    {
+                        "targets": [5],
+                        "visible": false,
+                        "searchable": false
+                    },
+                    {
+                        "targets": [6],
+                        "visible": false,
+                        "searchable": false
+                    },
+                    {
+                        "targets": [7],
+                        "visible": false,
+                        "searchable": false
+                    }
+                ],
+                "aaSorting": [ [6,'asc'], [7,'asc'] ]
+                
+            });
+            table.clear();
+
+            //add data and draw
+            table.rows.add(data).draw();
+
+        }
+
+
+        $("#search").submit(function(e) {
+
+            e.preventDefault(); // avoid to execute the actual submit of the form.
+
+            var form = $(this);
+
+            var fromdate = new Date(document.getElementById('fromdt').value);
+            var todate = new Date(document.getElementById('todt').value);
+
+            var diff = new Date(fromdate.getTime() - todate.getTime());
+            var diffMS = todate - fromdate;    
+
+            var diffS = diffMS /60000;    
+
+            if(fromdate>todate){
+                alert("Please select proper from and to date");
+            }else if(diffS>600){
+                alert("Please select 10 hour time window to search Unusual Loan journey data.")
+            }else{
+
+                $.ajax({
+                    type: "GET",
+                    url: "getUnusualJourney?fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
+                    dataType: "html",
+                    success: function(data) {
+                        $("body").html(data);
+                    }
+                });
+            }
+        });
+
+
+        $(function () {
+            Highcharts.setOptions({
+                lang: {
+                    decimalPoint: '.',
+                    thousandsSep: ','
+                }
+            });
+
+            
+        });
+
+        var clone_container = null;
+        var clone_tooltip = null;
+
+        function hasClass(element,cls) {
+            return element.classList.contains(cls);
+        }
+
+        function clean_tooltip() {
+            if (clone_container) {  chart.container.firstChild.removeChild(clone_container);
+                clone_container = null;
+            }
+
+            if (clone_tooltip) {
+                chart.container.removeChild(clone_tooltip);
+                clone_tooltip = null;
+            }
+        }
+
+
+        function drawlineChart(seriesData, funnelPage) {
+            var page = funnelPage;
+            chart = Highcharts.chart('container', {
+                chart:{
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        click: function(event) {
+                            clean_tooltip();
+                        }
+                    }
+                },
+                title: {
+                        text: ''
+                },
+                plotOptions: {
+                    scatter: {
+                        marker: {
+                            radius: 5,
+                            states: {
+                                    hover: {
+                                        enabled: true,
+                                        lineColor: 'rgb(255,255,255)'
+                                        }
+                                }
+                            },
+                            states: {
+                                hover: {
+                                    marker: {
+                                        enabled: false
+                                    }
+                                }
+                            }
+                    },
+                    series: {
+                        stickyTracking: false,
+                        cursor: 'pointer',
+                        point: {
+                            events: {
+                            click: function () {
+                                clean_tooltip();
+                                
+                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+                                var orig_container = hc_tooltip[0];
+                                var orig_tooltip = hc_tooltip[1];
+
+                                clone_tooltip = orig_tooltip.cloneNode(true);
+                                clone_tooltip.classList.remove("invisible");
+                                clone_tooltip.classList.add("clone");
+
+                                clone_container = this.series.chart.tooltip.label.element.cloneNode(true);
+                                clone_container.classList.remove("invisible");
+                                clone_container.classList.add("clone");
+
+                                chart.container.firstChild.appendChild(clone_container);
+                                chart.container.appendChild(clone_tooltip);
+                            },
+                            mouseOver: function() {
+                                var orig_tooltip, orig_container;
+                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+
+                                orig_container = hc_tooltip[0];
+                                orig_tooltip = hc_tooltip[1];
+
+                                if (orig_container && !hasClass(orig_container,"clone")){
+                                orig_container.classList.add("invisible");
+                                }
+
+                                if (orig_tooltip && !hasClass(orig_tooltip,"clone")) {
+                                orig_tooltip.classList.add("invisible");
+                                }
+                            }
+                        
+                            }
+                        }
+                    }
+                },
+
+                xAxis: {
+                    type: 'datetime',
+                        labels: {
+                            step: 2,
+                            rotation: -45,
+                            formatter: function() {
+                                    return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
+                            }
+                        },
+                        startOnTick: true,
+                        endOnTick: true,
+                        showLastLabel: true,
+                },
+                tooltip: {
+                    stickOnContact: true,
+                    hideDelay: 99999999,
+                    useHTML: true,
+                    style: {
+                        pointerEvents: 'auto'
+                    },
+                    formatter: function() {
+                        var fromdate = new Date(document.getElementById('fromdt').value);
+                        var todate = new Date(document.getElementById('todt').value);
+                        day = new Date(this.x);
+                        let series_name = `lead_ID: <b>${this.series.name}</b>`;
+                        let points = `${day}, ${page[this.y]}`;
+                        let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
+                        let fullstorylink = ' <a href="/fullstory?leaduid='+ this.series.name  +'&memberid=&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
+
+                        let total = `${points}<br>${link} ${fullstorylink}<br>${series_name}`;
+                        return total;
+                    },
+                },
+                yAxis: {
+                    title: {
+                        text: 'Funnel Page'
+                    },
+                    categories: funnelPage
+                },
+                series: seriesData
+            });
+        }
+
+        /*]]>*/
+    </script>
+
+
+</body>
+</html>
