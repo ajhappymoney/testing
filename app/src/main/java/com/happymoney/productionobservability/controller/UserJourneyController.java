@@ -63,7 +63,7 @@ public class UserJourneyController {
         toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
         JSONArray seriesArray = new JSONArray();
-        JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId);
+        JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId, requestName);
 
         processTimeHelper.printProcessEndTime(startTime, requestName);
         return ResponseEntity.ok(userJourney);

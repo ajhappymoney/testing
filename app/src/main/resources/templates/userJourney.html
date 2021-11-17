@@ -5,7 +5,7 @@
     <object th:include="fragments/head :: head" th:remove="tag"></object>
 </head>
 
-<body class="page-container-bg-solid" id="loadPage">
+<body class="page-container-bg-solid" id="loadPage" >
     <div th:include="fragments/topmenuheader :: header"></div>
       <div class="container-fluid page-body-wrapper">
         <div class= "row">
@@ -56,6 +56,8 @@
         dash.classList.remove('active');
         var userJ = document.querySelector("#userJourney");
         userJ.classList.add('active');
+        var normalJ = document.querySelector("#normalJourney");
+        normalJ.classList.remove('active');
         var totime;
         var fromtime;
         var leadID;
@@ -113,7 +115,6 @@
 
         });
         
-   
         $(function () {
             Highcharts.setOptions({
                 lang: {
@@ -121,10 +122,25 @@
                     thousandsSep: ','
                 }
             });
-
-            drawlineChart();
         });
 
+        var clone_container = null;
+        var clone_tooltip = null;
+
+        function hasClass(element,cls) {
+            return element.classList.contains(cls);
+        }
+
+        function clean_tooltip() {
+            if (clone_container) {  chart.container.firstChild.removeChild(clone_container);
+                clone_container = null;
+            }
+
+            if (clone_tooltip) {
+                chart.container.removeChild(clone_tooltip);
+                clone_tooltip = null;
+            }
+        }
 
         function drawlineChart(seriesData, funnelPage) {
             var page = funnelPage;

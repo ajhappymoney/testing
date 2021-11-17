@@ -73,6 +73,7 @@ public class UserJourneyHelper {
             seriesData.put("type","scatter");
             seriesData.put("lineWidth", 1);
             seriesData.put("color", colorCode);
+
             seriesArray.add(seriesData);
 
         }

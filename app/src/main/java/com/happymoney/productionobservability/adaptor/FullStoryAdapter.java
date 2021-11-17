@@ -26,7 +26,7 @@ public class FullStoryAdapter {
 
     Logger logger = LoggerFactory.getLogger(FullStoryAdapter.class);
 
-    public String getSession(String leadGuid, String memberId, String fromDate, String toDate){
+    public String getSession(String leadGuid, String memberId, String fromDate, String toDate, String requestName){
         try{
             //DatadogAdaptor dd = new DatadogAdaptor();
             if(memberId == null || memberId.trim().length() == 0){
@@ -38,7 +38,7 @@ public class FullStoryAdapter {
                 Long toEPoch = Long.parseLong(toDate);
                 OffsetDateTime toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
-                Integer memberIdInt = datadogAdaptor.getMemberIdValue(fromOffsetDateTime, toOffsetDateTime, leadGuid);
+                Integer memberIdInt = datadogAdaptor.getMemberIdValue(fromOffsetDateTime, toOffsetDateTime, leadGuid, requestName);
                 if(!(memberIdInt==null)) {
                     memberId = Integer.toString(memberIdInt);
                 }

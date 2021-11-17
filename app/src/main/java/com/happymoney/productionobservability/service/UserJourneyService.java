@@ -24,7 +24,7 @@ public class UserJourneyService {
     @Autowired
     private UserJourneyHelper userJourneyHelper;
 
-    public JSONObject getUserJourneyData(OffsetDateTime fromDate, OffsetDateTime toDate, String leadId){
+    public JSONObject getUserJourneyData(OffsetDateTime fromDate, OffsetDateTime toDate, String leadId, String requestName){
         try {
             StringBuffer leadsQuery = new StringBuffer("(");
             if(leadId.contains(",")){
