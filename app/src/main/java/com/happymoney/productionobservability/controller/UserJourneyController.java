@@ -11,6 +11,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,9 +46,9 @@ public class UserJourneyController {
     }
 
     @RequestMapping(value="/getUserJourney", method = RequestMethod.GET)
-    public String getUserJourney(@RequestParam("fromdate") String fromdate,
-                                 @RequestParam("todate") String todate,
-    @RequestParam("leadId") String leadId,  Model model) throws ParseException {
+    public ResponseEntity<?> getUserJourney(@RequestParam("fromdate") String fromdate,
+                                            @RequestParam("todate") String todate,
+                                            @RequestParam("leadId") String leadId) throws ParseException {
         Long startTime = processTimeHelper.getStartTime();
         String requestName = "getUserJourney";
         logger.info("requestName:"+requestName+" Loading user Journey information for leadID:"+leadId+" between fromdt = " + fromdate + ", todt = " + todate);
@@ -64,13 +65,7 @@ public class UserJourneyController {
         JSONArray seriesArray = new JSONArray();
         JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId, requestName);
 
-        model.addAttribute("fromdt", fromOffsetDateTime);
-        model.addAttribute("todt", toOffsetDateTime);
-        model.addAttribute("seriesArray",userJourney.get("seriesArray"));
-        model.addAttribute("leadId",leadId);
-        model.addAttribute("funnelPage", userJourney.get("funnelPage"));
-
         processTimeHelper.printProcessEndTime(startTime, requestName);
-        return "userJourney";
+        return ResponseEntity.ok(userJourney);
     }
 }

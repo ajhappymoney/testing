@@ -135,6 +135,7 @@ public class DatadogAdaptor {
 
     public JsonObject getMemberId(OffsetDateTime fromDate, OffsetDateTime toDate, String guids, String requestName){
 
+        logger.info("requestName:"+requestName+" Extracting memeber id");
         JsonObject resJsonObject = new JsonObject();
         String filterQuery = "service:doppio-apply task_family:*prod @scrubbedMsgLogCopy.member_id:* (" + guids + ")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
@@ -159,7 +160,6 @@ public class DatadogAdaptor {
     public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId, String requestName){
         HashMap<String, HashMap<String, ArrayList<Long>>> recentEvents = new HashMap<String, HashMap<String, ArrayList<Long>>>();
         String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
-//        System.out.println("filterQuery = " + filterQuery );
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
 //        toOffsetDateTime = OffsetDateTime.now();

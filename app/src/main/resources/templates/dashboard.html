@@ -91,7 +91,7 @@
 
                 function checkReloading() {
                     if (window.location.hash=="#autoreload") {
-                        reloading=setInterval(loadPage, 180000);
+                        reloading=setInterval(loadPage, 120000);
                         document.getElementById("reloadCB").checked=true;
                     }
                 }
@@ -99,7 +99,8 @@
                 function toggleAutoRefresh(cb) {
                     if (cb.checked) {
                         window.location.replace("#autoreload");
-                        reloading=setInterval(loadPage, 180000);
+                        reloading=setInterval(loadPage, 120000);
+                        loadPage();
                     } else {
                         window.location.replace("#");
                         clearInterval(reloading);
@@ -108,7 +109,6 @@
 
                 
                 window.onload=checkReloading;
-
 
                 function loadPage(){ 
                     var oldWord = "T";
@@ -233,7 +233,8 @@
                     //initialize DataTables
                     var table = $('#example').DataTable({
                         destroy: true,
-                        columns: cols
+                        columns: cols,
+                        
                     });
                     table.clear();
                     

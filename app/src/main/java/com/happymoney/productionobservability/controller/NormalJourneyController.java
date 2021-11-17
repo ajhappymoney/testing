@@ -9,6 +9,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -53,20 +54,43 @@ public class NormalJourneyController {
         Long toEPoch = Long.parseLong(todate);
         toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
-        logger.info("requestName:"+requestName+" Loading atypical journey information between fromDateTime = " + fromOffsetDateTime + ", toDateTime = " + toOffsetDateTime);
+        logger.info("requestName:"+requestName+" Loading all leads funnel traversal between fromDateTime = " + fromOffsetDateTime + ", toDateTime = " + toOffsetDateTime);
 
-
-        JSONObject normalUserJourney = normalJourneyService.fetchUserJourneyData(fromOffsetDateTime,
-                toOffsetDateTime, requestName);
+        JSONObject normalUserJourney = normalJourneyService.fetchUserJourneyData(fromOffsetDateTime, toOffsetDateTime, requestName);
 
         model.addAttribute("fromdt", fromOffsetDateTime);
         model.addAttribute("todt", toOffsetDateTime);
         model.addAttribute("seriesObj",normalUserJourney.get("seriesObj"));
         model.addAttribute("funnelPage", normalUserJourney.get("funnelPage"));
         model.addAttribute("leadsList", normalUserJourney.get("leadsList"));
+        model.addAttribute("tableJsonDataArray", normalUserJourney.get("tableJsonDataArray"));
 
-        processTimeHelper.printProcessEndTime(startTime, "Unusual Journey" + " FromDateTime:"+fromOffsetDateTime +" ToDateTime:"+toOffsetDateTime);
+        processTimeHelper.printProcessEndTime(startTime, "requestName:"+requestName + " FromDateTime:"+fromOffsetDateTime +" ToDateTime:"+toOffsetDateTime);
+
         return "normalJourney";
 
+    }
+
+    @RequestMapping(value="/getLeadJourney", method = RequestMethod.GET)
+    public ResponseEntity<?> getLeadJourney (@RequestParam("fromdate") String fromdate, @RequestParam("leadID") String leadID){
+
+        Long startTime = processTimeHelper.getStartTime();
+
+        String requestName = "getLeadJourney";
+
+        OffsetDateTime fromOffsetDateTime;
+        OffsetDateTime toOffsetDateTime;
+
+        Long fromEpoch = Long.parseLong(fromdate);
+        fromOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(fromEpoch).toInstant(), ZoneOffset.UTC).minusDays(15);
+
+        toOffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC);
+
+        logger.info("requestName:"+requestName+" Loading lead journey information between fromDateTime (15 days prior to the selected from date)= " + fromOffsetDateTime + ", toDateTime (now)= " + toOffsetDateTime);
+
+        JSONObject userJourneyData = normalJourneyService.getLeadJourneyData(fromOffsetDateTime, toOffsetDateTime, leadID, requestName);
+        processTimeHelper.printProcessEndTime(startTime, "requestName:"+requestName + " FromDateTime:"+fromOffsetDateTime +" ToDateTime:"+toOffsetDateTime);
+
+        return ResponseEntity.ok(userJourneyData);
     }
 }

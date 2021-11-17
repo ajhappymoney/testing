@@ -30,6 +30,7 @@ public class FullStoryAdapter {
         try{
             //DatadogAdaptor dd = new DatadogAdaptor();
             if(memberId == null || memberId.trim().length() == 0){
+                logger.info("requestName:"+requestName+ " Msg='No member id received with the request. Extracting member ID'");
 
                 Long fromEPoch = Long.parseLong(fromDate);
                 OffsetDateTime fromOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(fromEPoch).toInstant(), ZoneOffset.UTC);
@@ -44,13 +45,13 @@ public class FullStoryAdapter {
             }
 
             if(!(memberId == null || memberId.trim().length() == 0)){
+                logger.info("requestName:"+requestName+ " Msg='Extracted a valid member ID: "+memberId.toString());
                 ResponseEntity<Object> status = exchangeRest("/api/v1/sessions?uid=" + memberId);
                 ArrayList<LinkedHashMap> sessions = (ArrayList<LinkedHashMap>) status.getBody();
                 return (((LinkedHashMap) sessions.get(0)).get("FsUrl")).toString();
             }
         } catch (Exception e){
             logger.error(e.toString());
-//            e.printStackTrace();
         }
         return null;
     }

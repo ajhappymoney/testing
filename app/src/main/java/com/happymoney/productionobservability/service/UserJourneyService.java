@@ -42,7 +42,7 @@ public class UserJourneyService {
             leadsQuery.append(")");
 
             JsonObject datadogRes = datadogAdaptor.extractUserJourneyInfo(fromDate, toDate, leadsQuery, requestName);
-            JSONObject userJourneyModelRes = userJourneyHelper.getUserJourneyModelAttributes(datadogRes);
+            JSONObject userJourneyModelRes = userJourneyHelper.getUserJourneyModelAttributes(datadogRes, requestName);
             return userJourneyModelRes;
         }catch (Exception e){
             e.printStackTrace();

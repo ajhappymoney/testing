@@ -6,9 +6,15 @@
     <style>
         table.dataTable tbody tr.selected {
             font-weight: bold;
-            
             color: #f4f0ec;
             background-color: #0070ff;
+        }
+
+        .red {
+            background-color: #FDAB9F !important;
+        }
+        .green {
+            background-color: #9dc183 !important;
         }
     </style>
 </head>
@@ -35,6 +41,9 @@
     <div class="row" >
         <div class="col-md-6 mb-3" id="tablecontent" style="display:none">
             <div class="card">
+                <div class="card-header">
+                    <span id="tableHeader"><i class="bi bi-table me-2"></i>Lead Journey Stats</span> 
+                </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table
@@ -46,17 +55,36 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 mb-3" style="height: 60%; display: none;" id="userJourneyGraph" >
-            <div class="card h-100">
-                 <div class="card-header">
-                     <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                     Unusual Journey
-                 </div>
-                 <div class="card-body">
-                     <div id="container" style="width:100%; height:100%;"></div>
+        <div class="col-md-6 mb-3" id="secondarytablecontent" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <span id="tablename"><i class="bi bi-table me-2"></i></span> 
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table
+                                id="exampletest"
+                                class="table table-striped data-table"
+                                style="width: 100%">
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" >
+            <div class="col-md-12 mb-3" style="height: 60%; display: none;" id="userJourneyGraph" >
+                <div class="card h-100">
+                     <div class="card-header">
+                         <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
+                         Lead Journey
+                     </div>
+                     <div class="card-body">
+                         <div id="container" style="width:100%; height:100%;"></div>
+                     </div>
                  </div>
              </div>
-         </div>
+        </div>
+        
     </div>
 
 
@@ -73,23 +101,22 @@
         normalJ.classList.add('active');
         var totime;
         var fromtime;
+        var newSelection = true;
         if ([[${todt}]] && [[${fromdt}]]){
             totime = new Date([[${todt}]]);
             fromtime = new Date([[${fromdt}]]);
             fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
-            var leadsList = [[${leadsList}]];
-            // alert(leadsList);
-            tableFromJson(leadsList);
-            var seriesObj = [[${seriesObj}]];
+
+            var tableJsonDataArray = [[${tableJsonDataArray}]];
+            tableFromJson(tableJsonDataArray);
             var table = $('#example').DataTable();
+            var exampleTestTable;
+            
     
             $('#example tbody').on( 'click', 'tr', function () {
+                newSelection = true;
                 var rowVal = table.row( this ).data();
                 
-                var graphDiv = document.getElementById("userJourneyGraph");
-                if (graphDiv.style.display === "none") {
-                    graphDiv.style.display = "block";
-                }
                 if ( $(this).hasClass('selected') ) {
                     $(this).removeClass('selected');
                 }
@@ -97,26 +124,51 @@
                     table.$('tr.selected').removeClass('selected');
                     $(this).addClass('selected');
                 }
-                drawlineChart(seriesObj[rowVal['lead']]);
+                
 
-                // var table = $('#example').DataTable();
- 
-                
-                
-                
-            
-                // $('#button').click( function () {
-                //     table.row('.selected').remove().draw( false );
-                // } );
+                createSecondaryDataTable(rowVal['leadsArrayList'], rowVal['From'], rowVal['To']);
+
+              
+                if(newSelection){
+                    exampleTestTable = $('#exampletest').DataTable();
+                }
+
+                $('#exampletest tbody').on('click', 'tr', function () {
+                    var rowData = exampleTestTable.row( this ).data();
+                    var graphDiv = document.getElementById("userJourneyGraph");
+                    if (graphDiv.style.display === "none") {
+                        graphDiv.style.display = "block";
+                    }
+                    
+                    exampleTestTable.$('tr.selected').removeClass('selected');
+                    $(this).addClass('selected');
+
+                    var fromdate = new Date(document.getElementById('fromdt').value);
+                    var todate = new Date(document.getElementById('todt').value);
+                    var lead = rowData['leadID'];
+
+                    $.ajax({
+                    type: "GET",
+                    url: "getLeadJourney?fromdate="+Date.parse(fromdate)+"&leadID="+lead,
+                    // data: JSON.stringify(getLeadJourney),
+                    // dataType: 'json',
+                    dataType: "json",
+                    success: function(data) {
+                        drawlineChart(data["seriesArray"], data["funnelPage"]);
+                        }
+                    });
+                    newSelection = false;
+
+                } );
 
             } );
 
-            // document.getElementById("userJourneyGraph").style.display="block";
+            
+
         }else{
             totime = new Date();
             fromtime = new Date();
             fromtime.setMinutes(fromtime.getMinutes() - 60 - fromtime.getTimezoneOffset());
-            // document.getElementById("userJourneyGraph").style.display="none";
 
         }
 
@@ -127,16 +179,18 @@
         document.getElementById('fromdt').value = fromtime.toISOString().slice(0,16);
         document.getElementById('todt').value = totime.toISOString().slice(0,16);
 
-        function tableFromJson(data) {
+        function createSecondaryDataTable(data, fromPage , toPage){
 
-            var tablecontent = document.getElementById("tablecontent");
-
-            var fromdate = new Date(document.getElementById('fromdt').value);
-            var todate = new Date(document.getElementById('todt').value);
+            var tablecontent = document.getElementById("secondarytablecontent");
 
             if (tablecontent.style.display === "none") {
                 tablecontent.style.display = "block";
+                
             }
+
+            var divShowData = document.getElementById('tablename');
+            var tableName = fromPage +" -> "+toPage;
+            divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(tableName);
 
             // $("#example").dataTable().fnDestroy();
             var cols = [];
@@ -156,9 +210,80 @@
             });
 
             //initialize DataTables
-            var table = $('#example').DataTable({
+            var exampletestTable = $('#exampletest').DataTable({
                 destroy: true,
                 columns: cols
+            });
+            exampletestTable.clear();
+
+            //add data and draw
+            exampletestTable.rows.add(data).draw();
+            
+
+        }
+
+        function tableFromJson(data) {
+
+            var tablecontent = document.getElementById("tablecontent");
+
+            if (tablecontent.style.display === "none") {
+                tablecontent.style.display = "block";
+            }
+
+            // $("#example").dataTable().fnDestroy();
+            var cols = [];
+
+            var exampleRecord = data[0];
+
+            //get keys in object. This will only work if your statement remains true that all objects have identical keys
+            var keys = Object.keys(exampleRecord);
+            keys=["From","To","Count","Percantage","color","leadsArrayList","fromPriority","toPriority"];
+
+            //for each key, add a column definition
+            keys.forEach(function(k) {
+                cols.push({
+                title: k,
+                data: k
+                //optionally do some type detection here for render function
+                });
+            });
+            // alert(cols[0] +" "+ cols[1]);
+
+            //initialize DataTables
+            var table = $('#example').DataTable({
+                destroy: true,
+                columns: cols,
+                "createdRow": function( row, data, dataIndex){
+                    if( data["color"] ==  `red`){
+                        $(row).addClass('red');
+                    }else if (data["color"] ==  `green`) {
+                        $(row).addClass('green');
+                    } 
+                },
+                "columnDefs": [
+                    {
+                        "targets": [4],
+                        "visible": false,
+                        "searchable": true
+                    },
+                    {
+                        "targets": [5],
+                        "visible": false,
+                        "searchable": false
+                    },
+                    {
+                        "targets": [6],
+                        "visible": false,
+                        "searchable": false
+                    },
+                    {
+                        "targets": [7],
+                        "visible": false,
+                        "searchable": false
+                    }
+                ],
+                "aaSorting": [ [6,'asc'], [7,'asc'] ]
+                
             });
             table.clear();
 
@@ -178,17 +303,14 @@
             var todate = new Date(document.getElementById('todt').value);
 
             var diff = new Date(fromdate.getTime() - todate.getTime());
-
-            // console.log(diff.getMinutes()); 
             var diffMS = todate - fromdate;    
-            // console.log(diffMS + ' ms');
 
             var diffS = diffMS /60000;    
 
-            // var diffM = diffS / 60;
-            // console.log(diffM + ' minutes');
-            if(diffS>480){
-                alert("Please select 8 hour time window to search Unusual Loan journey data.")
+            if(fromdate>todate){
+                alert("Please select proper from and to date");
+            }else if(diffS>600){
+                alert("Please select 10 hour time window to search Unusual Loan journey data.")
             }else{
 
                 $.ajax({
@@ -214,65 +336,144 @@
             
         });
 
+        var clone_container = null;
+        var clone_tooltip = null;
 
-        function drawlineChart(seriesData) {
-            // alert(seriesData);
-            var page = [[${funnelPage}]];
-            // var simpleJsonObject =[[${simpleJsonObject}]];
-            var userJourneyLineChart = Highcharts.chart('container', {
-               chart:{
-                   type: 'scatter'
-               },
+        function hasClass(element,cls) {
+            return element.classList.contains(cls);
+        }
+
+        function clean_tooltip() {
+            if (clone_container) {  chart.container.firstChild.removeChild(clone_container);
+                clone_container = null;
+            }
+
+            if (clone_tooltip) {
+                chart.container.removeChild(clone_tooltip);
+                clone_tooltip = null;
+            }
+        }
+
+
+        function drawlineChart(seriesData, funnelPage) {
+            var page = funnelPage;
+            chart = Highcharts.chart('container', {
+                chart:{
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        click: function(event) {
+                            clean_tooltip();
+                        }
+                    }
+                },
                 title: {
                         text: ''
-                    },
-
-            plotOptions: {
-                series: {
-                    allowPointSelect: true,
-                    marker: {
-                        enabled: true,
-                        value: 'x'
-
-                    }
-                }
-            },
-
-            xAxis: {
-                type: 'datetime',
-                    labels: {
-                        step: 2,
-                        rotation: -45,
-                        formatter: function() {
-                                return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
-                        }
-                    },
-                    startOnTick: true,
-                    endOnTick: true,
-                    showLastLabel: true,
-            },
-            tooltip: {
-                formatter: function() {
-                    var chart = Highcharts.charts[0],
-                        weekdays = chart.options.lang.weekdays,
-                        day = new Date(this.x);
-
-                    return day + ': ' + page[this.y];
-                }
-            },
-
-                yAxis: {
-                title: {
-                    text: 'Funnel Page'
                 },
-                categories: [[${funnelPage}]]
-            },
+                plotOptions: {
+                    scatter: {
+                        marker: {
+                            radius: 5,
+                            states: {
+                                    hover: {
+                                        enabled: true,
+                                        lineColor: 'rgb(255,255,255)'
+                                        }
+                                }
+                            },
+                            states: {
+                                hover: {
+                                    marker: {
+                                        enabled: false
+                                    }
+                                }
+                            }
+                    },
+                    series: {
+                        stickyTracking: false,
+                        cursor: 'pointer',
+                        point: {
+                            events: {
+                            click: function () {
+                                clean_tooltip();
+                                
+                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+                                var orig_container = hc_tooltip[0];
+                                var orig_tooltip = hc_tooltip[1];
 
+                                clone_tooltip = orig_tooltip.cloneNode(true);
+                                clone_tooltip.classList.remove("invisible");
+                                clone_tooltip.classList.add("clone");
+
+                                clone_container = this.series.chart.tooltip.label.element.cloneNode(true);
+                                clone_container.classList.remove("invisible");
+                                clone_container.classList.add("clone");
+
+                                chart.container.firstChild.appendChild(clone_container);
+                                chart.container.appendChild(clone_tooltip);
+                            },
+                            mouseOver: function() {
+                                var orig_tooltip, orig_container;
+                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
+
+                                orig_container = hc_tooltip[0];
+                                orig_tooltip = hc_tooltip[1];
+
+                                if (orig_container && !hasClass(orig_container,"clone")){
+                                orig_container.classList.add("invisible");
+                                }
+
+                                if (orig_tooltip && !hasClass(orig_tooltip,"clone")) {
+                                orig_tooltip.classList.add("invisible");
+                                }
+                            }
+                        
+                            }
+                        }
+                    }
+                },
+
+                xAxis: {
+                    type: 'datetime',
+                        labels: {
+                            step: 2,
+                            rotation: -45,
+                            formatter: function() {
+                                    return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
+                            }
+                        },
+                        startOnTick: true,
+                        endOnTick: true,
+                        showLastLabel: true,
+                },
+                tooltip: {
+                    stickOnContact: true,
+                    hideDelay: 99999999,
+                    useHTML: true,
+                    style: {
+                        pointerEvents: 'auto'
+                    },
+                    formatter: function() {
+                        var fromdate = new Date(document.getElementById('fromdt').value);
+                        var todate = new Date(document.getElementById('todt').value);
+                        day = new Date(this.x);
+                        let series_name = `lead_ID: <b>${this.series.name}</b>`;
+                        let points = `${day}, ${page[this.y]}`;
+                        let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
+                        let fullstorylink = ' <a href="/fullstory?leaduid='+ this.series.name  +'&memberid=&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
+
+                        let total = `${points}<br>${link} ${fullstorylink}<br>${series_name}`;
+                        return total;
+                    },
+                },
+                yAxis: {
+                    title: {
+                        text: 'Funnel Page'
+                    },
+                    categories: funnelPage
+                },
                 series: seriesData
-
-
             });
-
         }
 
         /*]]>*/
