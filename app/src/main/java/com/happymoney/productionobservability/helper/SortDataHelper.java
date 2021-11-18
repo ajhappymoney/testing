@@ -44,21 +44,21 @@ public class SortDataHelper {
         auto.put("Balance", 8);
         auto.put("Offer", 9);
         auto.put("Employment", 10);
-        auto.put("DCP", 11);
-        auto.put("BankAccount", 12);
-        auto.put("Verification Documents", 13);
-        auto.put("Offer Review", 14);
-        auto.put("Partner Lending Page", 15);
-        auto.put("Truth In Lending Statement", 16);
-        auto.put("E-Sign Complete", 17);
-        auto.put("AdverseAction", 18);
-        auto.put("Experian Credit Freeze", 19);
-        auto.put("KBA", 20);
-        auto.put("KBA Failed", 21);
-        auto.put("Autopay", 22);
-        auto.put("Review", 23);
-        auto.put("ContactUs", 24);
-        auto.put("PlaidNoAuth", 25);
+        auto.put("Experian Credit Freeze", 11);
+        auto.put("KBA", 12);
+        auto.put("KBA Failed", 13);
+        auto.put("DCP", 14);
+        auto.put("BankAccount", 15);
+        auto.put("PlaidNoAuth", 16);
+        auto.put("Autopay", 17);
+        auto.put("Verification Documents", 18);
+        auto.put("Offer Review", 19);
+        auto.put("Partner Lending Page", 20);
+        auto.put("Truth In Lending Statement", 21);
+        auto.put("E-Sign Complete", 22);
+        auto.put("AdverseAction", 23);
+        auto.put("Review", 24);
+        auto.put("ContactUs", 25);
 
         return auto;
     }

@@ -3,6 +3,7 @@ package com.happymoney.productionobservability.controller;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.happymoney.productionobservability.helper.ProcessTimeHelper;
 import com.happymoney.productionobservability.service.DashboardService;
 import com.happymoney.productionobservability.service.UserJourneyService;
 import org.json.simple.JSONArray;
@@ -10,6 +11,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,6 +35,9 @@ public class UserJourneyController {
     @Autowired
     private UserJourneyService userJourneyService;
 
+    @Autowired
+    private ProcessTimeHelper processTimeHelper;
+
     Logger logger = LoggerFactory.getLogger(UserJourneyController.class);
 
     @RequestMapping(value = "/userJourney", method= RequestMethod.GET)
@@ -41,11 +46,12 @@ public class UserJourneyController {
     }
 
     @RequestMapping(value="/getUserJourney", method = RequestMethod.GET)
-    public String getUserJourney(@RequestParam("fromdate") String fromdate,
-                                 @RequestParam("todate") String todate,
-    @RequestParam("leadId") String leadId,  Model model) throws ParseException {
-        logger.info("Loading user Journey information for leadID:"+leadId+" between fromdt = " + fromdate + ", todt = " + todate);
-
+    public ResponseEntity<?> getUserJourney(@RequestParam("fromdate") String fromdate,
+                                            @RequestParam("todate") String todate,
+                                            @RequestParam("leadId") String leadId) throws ParseException {
+        Long startTime = processTimeHelper.getStartTime();
+        String requestName = "getUserJourney";
+        logger.info("requestName:"+requestName+" Loading user Journey information for leadID:"+leadId+" between fromdt = " + fromdate + ", todt = " + todate);
 
         OffsetDateTime fromOffsetDateTime;
         OffsetDateTime toOffsetDateTime;
@@ -57,14 +63,9 @@ public class UserJourneyController {
         toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
         JSONArray seriesArray = new JSONArray();
-        JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId);
+        JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId, requestName);
 
-        model.addAttribute("fromdt", fromOffsetDateTime);
-        model.addAttribute("todt", toOffsetDateTime);
-        model.addAttribute("seriesArray",userJourney.get("seriesArray"));
-        model.addAttribute("leadId",leadId);
-        model.addAttribute("funnelPage", userJourney.get("funnelPage"));
-
-        return "userJourney";
+        processTimeHelper.printProcessEndTime(startTime, requestName);
+        return ResponseEntity.ok(userJourney);
     }
 }
