@@ -77,7 +77,7 @@ public class UserJourneyHelper {
                 userJourneyTemp.add(entrytest.getKey());
                 userJourneyTemp.add(funnelPage.indexOf(entrytest.getValue()));
 
-                Long eventDiff = (entrytest.getKey() - previousEventTime) / 60000;
+                Long eventDiff = (entrytest.getKey() - previousEventTime) / 1000;
                 temp.add(eventDiff);
 
                 if(funnelPageNames.containsKey(eventDiff)){

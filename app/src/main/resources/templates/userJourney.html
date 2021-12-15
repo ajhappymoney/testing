@@ -458,7 +458,7 @@
                         var leadHashIDData = this.series.name;
                         let leadHashID=leadHashIDData;
                         let xValue = xVal;
-                        let ytooltip = `TimeElapsed: <b>${yVal}</b>`;
+                        let ytooltip = `TimeElapsed: <b>${yVal}</b> seconds`;
                         var seriesData = this.series.name
                         var pageName = funnelmapping[seriesData][yVal][xVal];
                         let pageNameVal = pageName["pageName"];
@@ -473,7 +473,7 @@
                 },
                 yAxis: {
                     title: {
-                        text: 'Page Transition Time (minutes)'
+                        text: 'Page Transition Time (seconds)'
                     }
                     // categories: funnelPage
                 },
