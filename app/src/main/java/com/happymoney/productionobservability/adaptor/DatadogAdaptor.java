@@ -11,6 +11,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.happymoney.productionobservability.helper.SortDataHelper;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,6 +157,43 @@ public class DatadogAdaptor {
             return resJsonObject;
         }
         return null;
+    }
+
+    public JSONArray getDatadogLogExplorerData(String leadGUid, Boolean errorLog, OffsetDateTime fromDate, OffsetDateTime toDate, String requestName){
+        logger.info("requestName:"+requestName+" Extracting Datadog logs");
+//        JsonObject resJsonObject = new JsonObject();
+        JSONArray finalRes = new JSONArray();
+        String filterQuery = new String();
+        if(errorLog){
+            filterQuery = leadGUid + " (error OR ERROR)";
+        }
+        else{
+            filterQuery = leadGUid;
+        }
+
+        String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
+        Integer pageLimit = 2000; // Integer | Maximum number of logs in the response.
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, false, requestName );
+        if(!(queryRes==null || queryRes.size()==0)) {
+            for (Log logmodel :
+                    queryRes) {
+                HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
+                JSONObject datadogSingleEvent = new JSONObject();
+                logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes();
+                String message =  ((LogAttributes) logmodel.getAttributes()).getMessage();
+                String status = ((LogAttributes) logmodel.getAttributes()).getStatus();
+                Long eventTime = ((LogAttributes) logmodel.getAttributes()).getTimestamp().toEpochSecond();
+                String service = (String) logAttributesHashMap.get("service");
+                datadogSingleEvent.put("eventtime", eventTime);
+                datadogSingleEvent.put("service", service);
+//                datadogSingleEvent.put("status", status);
+                datadogSingleEvent.put("message", message);
+                finalRes.add(datadogSingleEvent);
+
+            }
+
+        }
+        return finalRes;
     }
 
     public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId, String requestName){

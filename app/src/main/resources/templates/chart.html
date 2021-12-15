@@ -205,9 +205,8 @@
                 }
 
                 var divShowData = document.getElementById('tablename');
-                // var innerhtmlVal = divShowData.innerHTML.concat(profilePage);
-                // alert(innerhtmlVal);
-                divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(profilePage);
+                var camelCaseSplit = profilePage.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+                divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(camelCaseSplit);
                 
                 // $("#example").dataTable().fnDestroy();
                 var cols = [];
@@ -258,7 +257,8 @@
                 var salesByTypeChart = Highcharts.chart('salesByType', {
                     chart: {
                         type: 'column',
-                        margin: 75,
+                        marginBottom: 100,
+                        marginTop: 50,
                         height: 400,
                     },
                     title: {
@@ -282,17 +282,21 @@
 
                         labels: {
                             formatter: function() {
-                                var ret = this.value,
-                                    len = ret.length;
-                              
-                              if( len > 10 ) {
-                                ret = ret.slice(0,10) + '<br/>' + ret.slice(10, len);
-                              }
-
-                              if( len > 25 ) {
-                                ret = ret.slice(0,25) + '...';
-                              }
-                            return ret;
+                                var ret = this.value;
+                                // var labelList = ret.split(" ");
+                                var camelCaseSplit = ret.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+                                // console.log(labelList);
+                                var labelList = camelCaseSplit.split(" ");
+                                var newLabel = "";
+                                for(i=0 ; i<labelList.length;i++){
+                                    if(newLabel===""){
+                                        newLabel = labelList[i]+'<br/>';
+                                    }else{
+                                        newLabel = newLabel + labelList[i]+'<br/>';
+                                    }
+                                }
+                                
+                            return newLabel;
                             }
                           },
                         tickmarkPlacement:'on',

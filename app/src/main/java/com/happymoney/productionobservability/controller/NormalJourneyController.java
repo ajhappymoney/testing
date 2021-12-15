@@ -16,6 +16,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -58,6 +60,7 @@ public class NormalJourneyController {
 
         JSONObject normalUserJourney = normalJourneyService.fetchUserJourneyData(fromOffsetDateTime, toOffsetDateTime, requestName);
 
+
         model.addAttribute("fromdt", fromOffsetDateTime);
         model.addAttribute("todt", toOffsetDateTime);
         model.addAttribute("seriesObj",normalUserJourney.get("seriesObj"));
@@ -68,7 +71,6 @@ public class NormalJourneyController {
         processTimeHelper.printProcessEndTime(startTime, "requestName:"+requestName + " FromDateTime:"+fromOffsetDateTime +" ToDateTime:"+toOffsetDateTime);
 
         return "normalJourney";
-
     }
 
     @RequestMapping(value="/getLeadJourney", method = RequestMethod.GET)

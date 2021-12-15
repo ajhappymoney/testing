@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.awt.*;
 import java.sql.Timestamp;
@@ -67,5 +68,28 @@ public class UserJourneyController {
 
         processTimeHelper.printProcessEndTime(startTime, requestName);
         return ResponseEntity.ok(userJourney);
+    }
+
+    @RequestMapping(value = "/datadogLogs", method = RequestMethod.GET, params = {"leaduid","errorlog", "fromdt","todt"})
+    public ResponseEntity<?> datadogLogs(@RequestParam(value="leaduid", required = true) String leadGuid, @RequestParam(value="errorlog", required = true) Boolean errorLog,
+                                    @RequestParam(required = true, name = "fromdt") String fromDate, @RequestParam(required = true, name = "todt") String toDate) {
+
+        Long startTime = processTimeHelper.getStartTime();
+
+        String requestName = "datadogLogs";
+
+        OffsetDateTime fromOffsetDateTime;
+        OffsetDateTime toOffsetDateTime;
+
+        Long fromEpoch = Long.parseLong(fromDate);
+        fromOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(fromEpoch).toInstant(), ZoneOffset.UTC);
+
+        Long toEpoch = Long.parseLong(toDate);
+        toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEpoch).toInstant(), ZoneOffset.UTC);
+
+        JSONArray datadogLogData= userJourneyService.getDatadogDataTableEntries(leadGuid, errorLog, fromOffsetDateTime, toOffsetDateTime);
+//        logger.info("Generated Datadog Url = " + datadogUrl);
+        return ResponseEntity.ok(datadogLogData);
+
     }
 }
