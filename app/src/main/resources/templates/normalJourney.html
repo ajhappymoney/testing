@@ -377,10 +377,27 @@
                     title: k,
                     data: k,
                     "render": function (data) {
-                        var date = new Date(data * 1000);
-                        var iso = date.toISOString().replace('T', ' ');
-
-                        return iso;
+                        var d = new Date(data * 1000);
+                        Date.shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        var day = ''+d.getUTCDate();
+                        var minutes = ''+d.getUTCMinutes();
+                        var hours = ''+d.getUTCHours();
+                        var seconds = ''+d.getUTCSeconds();
+                        var milliseconds = ''+d.getUTCMilliseconds();
+                        if (day.length < 2) 
+                            day = '0' + day;
+                        if (minutes.length < 2) 
+                            minutes = '0' + minutes;
+                        if (hours.length < 2) 
+                            hours = '0' + hours;
+                        if (seconds.length < 2) 
+                            seconds = '0' + seconds;
+                        if (milliseconds.length == 1) 
+                            milliseconds = '00' + milliseconds;
+                        else if(milliseconds.length == 2) 
+                            milliseconds = '0' + milliseconds;
+                        return Date.shortMonths[d.getUTCMonth()]+' '+day+' '+hours+':'+minutes+':'+seconds+ '.'+milliseconds;
+                        
                     }
                     //optionally do some type detection here for render function
                     });

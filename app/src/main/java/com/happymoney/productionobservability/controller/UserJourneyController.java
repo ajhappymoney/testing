@@ -63,7 +63,6 @@ public class UserJourneyController {
         Long toEPoch = Long.parseLong(todate);
         toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEPoch).toInstant(), ZoneOffset.UTC);
 
-        JSONArray seriesArray = new JSONArray();
         JSONObject userJourney = userJourneyService.getUserJourneyData(fromOffsetDateTime, toOffsetDateTime, leadId, requestName);
 
         processTimeHelper.printProcessEndTime(startTime, requestName);
@@ -78,6 +77,8 @@ public class UserJourneyController {
 
         String requestName = "datadogLogs";
 
+
+
         OffsetDateTime fromOffsetDateTime;
         OffsetDateTime toOffsetDateTime;
 
@@ -87,8 +88,10 @@ public class UserJourneyController {
         Long toEpoch = Long.parseLong(toDate);
         toOffsetDateTime = OffsetDateTime.ofInstant(new Timestamp(toEpoch).toInstant(), ZoneOffset.UTC);
 
-        JSONArray datadogLogData= userJourneyService.getDatadogDataTableEntries(leadGuid, errorLog, fromOffsetDateTime, toOffsetDateTime);
-//        logger.info("Generated Datadog Url = " + datadogUrl);
+        logger.info("requestName:"+requestName+" Loading datadog logs for leadID:"+leadGuid+" extract errorlog:"+errorLog+" between fromdt = " + fromOffsetDateTime + ", todt = " + toOffsetDateTime);
+
+        JSONArray datadogLogData= userJourneyService.getDatadogDataTableEntries(leadGuid, errorLog, fromOffsetDateTime, toOffsetDateTime, requestName);
+        processTimeHelper.printProcessEndTime(startTime, requestName);
         return ResponseEntity.ok(datadogLogData);
 
     }

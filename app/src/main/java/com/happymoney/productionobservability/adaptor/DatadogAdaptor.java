@@ -161,7 +161,6 @@ public class DatadogAdaptor {
 
     public JSONArray getDatadogLogExplorerData(String leadGUid, Boolean errorLog, OffsetDateTime fromDate, OffsetDateTime toDate, String requestName){
         logger.info("requestName:"+requestName+" Extracting Datadog logs");
-//        JsonObject resJsonObject = new JsonObject();
         JSONArray finalRes = new JSONArray();
         String filterQuery = new String();
         if(errorLog){
@@ -181,12 +180,10 @@ public class DatadogAdaptor {
                 JSONObject datadogSingleEvent = new JSONObject();
                 logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes();
                 String message =  ((LogAttributes) logmodel.getAttributes()).getMessage();
-                String status = ((LogAttributes) logmodel.getAttributes()).getStatus();
                 Long eventTime = ((LogAttributes) logmodel.getAttributes()).getTimestamp().toEpochSecond();
                 String service = (String) logAttributesHashMap.get("service");
                 datadogSingleEvent.put("eventtime", eventTime);
                 datadogSingleEvent.put("service", service);
-//                datadogSingleEvent.put("status", status);
                 datadogSingleEvent.put("message", message);
                 finalRes.add(datadogSingleEvent);
 
@@ -201,7 +198,6 @@ public class DatadogAdaptor {
         String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
-//        toOffsetDateTime = OffsetDateTime.now();
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromOffsetDateTime, toOffsetDateTime, pageLimit, pageCursor, false, requestName);
         if(!(queryRes==null)) {
             for (Log logmodel :
@@ -240,8 +236,6 @@ public class DatadogAdaptor {
     }
 
     public HashMap<String, HashMap<String, Long>> getNormalCheckLogData(OffsetDateTime fromDate, OffsetDateTime toDate, String requestName) {
-
-//        logger.info("requestName:"+requestName+" Extracting atypical journey data from datadog between from = " + fromDate + " to = " + toDate);
 
         Map<String, Integer> auto = sortDataHelper.getPriorityMap();
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
@@ -307,7 +301,7 @@ public class DatadogAdaptor {
                             .sort(sort)
                             .pageLimit(pageLimit));
                     finalList = result.getData();
-//                    System.out.println("result "+ result);
+
                     if(pagination) {
                         Integer count = 1;
                         String afterPage = "";

@@ -52,8 +52,8 @@ public class UserJourneyService {
 
     }
 
-    public JSONArray getDatadogDataTableEntries(String leadGUid, Boolean errorLog, OffsetDateTime fromDate, OffsetDateTime toDate){
-        JSONArray datadogRes = datadogAdaptor.getDatadogLogExplorerData(leadGUid, errorLog, fromDate, toDate, "getDatadogLogs");
+    public JSONArray getDatadogDataTableEntries(String leadGUid, Boolean errorLog, OffsetDateTime fromDate, OffsetDateTime toDate, String requestName){
+        JSONArray datadogRes = datadogAdaptor.getDatadogLogExplorerData(leadGUid, errorLog, fromDate, toDate, requestName);
         return datadogRes;
     }
 
