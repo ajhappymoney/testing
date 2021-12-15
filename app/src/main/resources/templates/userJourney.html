@@ -126,6 +126,9 @@
             var todate = new Date(document.getElementById('todt').value);
             var leadGUid = document.getElementById('leadId').value;
 
+            if(leadGUid.length<36){
+                alert("Please enter valid leadID");
+            }
             var splitName = leadGUid.split(",");
             if(fromdate>todate){
                 alert("Please select proper from and to date");
@@ -259,6 +262,7 @@
         }
 
         function getDatadogLogs(leadIDVal, xVal, previoustimestamp, errorLog){
+            var fromdate = new Date(document.getElementById('fromdt').value);
             var todate = new Date(document.getElementById('todt').value);
             if(previoustimestamp===xVal){
                 previoustimestamp = Date.parse(fromdate);
@@ -269,8 +273,13 @@
                     url: 'datadogLogs?leaduid='+ leadIDVal+'&errorlog='+errorLog+'&fromdt='+previoustimestamp+'&todt='+xVal,
                     dataType: "json",
                     success: function(data) {
-                        tableFromJson(data);
+                            if ((data === 'undefined') || (data === null) || data.length==0) {
+                                alert("No datadog logs available");
+                            }else{
+                                tableFromJson(data);
+                            }
                         }
+                        
             });
         }
 
