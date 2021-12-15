@@ -497,7 +497,12 @@
                     url: 'datadogLogs?leaduid='+ leadIDVal+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate),
                     dataType: "json",
                     success: function(data) {
-                        datadogTable(data);
+                        if ((data === 'undefined') || (data === null) || data.length==0) {
+                                alert("No datadog logs available");
+                        }else{
+                            datadogTable(data);
+                        }
+                        // datadogTable(data);
                         }
             });
             // alert(leadIDVal);
