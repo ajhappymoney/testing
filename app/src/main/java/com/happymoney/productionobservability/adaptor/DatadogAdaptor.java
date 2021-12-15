@@ -11,6 +11,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.happymoney.productionobservability.helper.SortDataHelper;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,12 +159,45 @@ public class DatadogAdaptor {
         return null;
     }
 
+    public JSONArray getDatadogLogExplorerData(String leadGUid, Boolean errorLog, OffsetDateTime fromDate, OffsetDateTime toDate, String requestName){
+        logger.info("requestName:"+requestName+" Extracting Datadog logs");
+        JSONArray finalRes = new JSONArray();
+        String filterQuery = new String();
+        if(errorLog){
+            filterQuery = leadGUid + " (error OR ERROR)";
+        }
+        else{
+            filterQuery = leadGUid;
+        }
+
+        String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
+        Integer pageLimit = 2000; // Integer | Maximum number of logs in the response.
+        List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, false, requestName );
+        if(!(queryRes==null || queryRes.size()==0)) {
+            for (Log logmodel :
+                    queryRes) {
+                HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
+                JSONObject datadogSingleEvent = new JSONObject();
+                logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes();
+                String message =  ((LogAttributes) logmodel.getAttributes()).getMessage();
+                Long eventTime = ((LogAttributes) logmodel.getAttributes()).getTimestamp().toEpochSecond();
+                String service = (String) logAttributesHashMap.get("service");
+                datadogSingleEvent.put("eventtime", eventTime);
+                datadogSingleEvent.put("service", service);
+                datadogSingleEvent.put("message", message);
+                finalRes.add(datadogSingleEvent);
+
+            }
+
+        }
+        return finalRes;
+    }
+
     public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId, String requestName){
         HashMap<String, HashMap<String, ArrayList<Long>>> recentEvents = new HashMap<String, HashMap<String, ArrayList<Long>>>();
         String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
-//        toOffsetDateTime = OffsetDateTime.now();
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromOffsetDateTime, toOffsetDateTime, pageLimit, pageCursor, false, requestName);
         if(!(queryRes==null)) {
             for (Log logmodel :
@@ -201,8 +236,6 @@ public class DatadogAdaptor {
     }
 
     public HashMap<String, HashMap<String, Long>> getNormalCheckLogData(OffsetDateTime fromDate, OffsetDateTime toDate, String requestName) {
-
-//        logger.info("requestName:"+requestName+" Extracting atypical journey data from datadog between from = " + fromDate + " to = " + toDate);
 
         Map<String, Integer> auto = sortDataHelper.getPriorityMap();
         HashMap<String, HashMap<String, Long>> recentEvents = new HashMap<String, HashMap<String, Long>>();
@@ -268,7 +301,7 @@ public class DatadogAdaptor {
                             .sort(sort)
                             .pageLimit(pageLimit));
                     finalList = result.getData();
-//                    System.out.println("result "+ result);
+
                     if(pagination) {
                         Integer count = 1;
                         String afterPage = "";

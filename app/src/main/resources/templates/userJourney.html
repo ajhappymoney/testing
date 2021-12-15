@@ -9,7 +9,7 @@
     <div th:include="fragments/topmenuheader :: header"></div>
       <div class="container-fluid page-body-wrapper">
         <div class= "row">
-            <div class="col-md-6 mb-3" style="height: 60%;">
+            <div class="col-md-3 mb-3" style="height: 100%;">
                 <div style="margin: 10px; width: 100%;">
                     <form id="search">
                         <div class="form-group">
@@ -25,14 +25,16 @@
                         <label for="todt">To</label>
                         <input type="datetime-local" class="form-control" id="todt" name="todt">
                         </div>
-                       
+                        <div class="form-group" style="margin-top: 10px;">
                         <button type="search" class="btn btn-primary">Search</button>
+                        </div>
                     </form>
-                    </div>
-                    </div>
+                </div>
+            </div>
+            
         </div>
-        <div class="row" id="userJourneyGraph" style="display: none;">
-            <div class="col-md-12 mb-3" style="height: 60%;">
+        <div class="row" >
+            <div class="col-md-6 mb-3" id="journeyGraph" style="display: none;">
                 <div class="card h-100">
                     <div class="card-header">
                         <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
@@ -43,6 +45,35 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-6 mb-3"  id="intervalGraph" style="display: none;">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
+                        User Interval Journey
+                    </div>
+                    <div class="card-body">
+                        <div id="intervalcontainer" style="width:100%; height:100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" >
+        <div class="col-md-12 mb-3" id="tablecontent" style="display:none; margin-top: 2%;">
+            <div class="card">
+                <div class="card-header">
+                    <span id="tableHeader"><i class="bi bi-table me-2"></i>Datadog Logs</span> 
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table
+                                id="example"
+                                class="table table-striped data-table"
+                                style="width: 100%">
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
         </div></div>
         
@@ -67,12 +98,15 @@
             fromtime.setMinutes(fromtime.getMinutes() - fromtime.getTimezoneOffset());
             leadID = [[${leadId}]];
             document.getElementById('leadId').value = leadID;
-            document.getElementById("userJourneyGraph").style.display="block";
+            document.getElementById("journeyGraph").style.display="block";
+            document.getElementById("intervalGraph").style.display="block";
+            
         }else{
             totime = new Date();
             fromtime = new Date();
             fromtime.setMinutes(fromtime.getMinutes() - 60 - fromtime.getTimezoneOffset());
-            document.getElementById("userJourneyGraph").style.display="none";
+            document.getElementById("journeyGraph").style.display="none";
+            document.getElementById("intervalGraph").style.display="none";
             
         }
         totime.setMinutes(totime.getMinutes() - totime.getTimezoneOffset());
@@ -103,11 +137,16 @@
                     url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
                     dataType: "json",
                     success: function(data) {     
-                        var graphDiv = document.getElementById("userJourneyGraph");
+                        var graphDiv = document.getElementById("journeyGraph");
                         if (graphDiv.style.display === "none") {
                             graphDiv.style.display = "block";
                         }
-                        drawlineChart(data["seriesArray"], data["funnelPage"]);
+                        var intervalGraphDiv = document.getElementById("intervalGraph");
+                        if (intervalGraphDiv.style.display === "none") {
+                            intervalGraphDiv.style.display = "block";
+                        }
+                        drawlineChartInterval(data["seriesArray"], data["funnelPage"], data["funnelPageValues"]);
+                        drawlineChart(data["userJourneySeriesData"], data["funnelPage"])
                     }
                     });
             }
@@ -126,13 +165,16 @@
 
         var clone_container = null;
         var clone_tooltip = null;
+        var clone_interval_container = null;
+        var clone_interval_tooltip = null;
 
         function hasClass(element,cls) {
             return element.classList.contains(cls);
         }
 
         function clean_tooltip() {
-            if (clone_container) {  chart.container.firstChild.removeChild(clone_container);
+            if (clone_container) {  
+                chart.container.firstChild.removeChild(clone_container);
                 clone_container = null;
             }
 
@@ -142,17 +184,184 @@
             }
         }
 
+        function tableFromJson(data) {
+
+            var tablecontent = document.getElementById("tablecontent");
+
+            if (tablecontent.style.display === "none") {
+                tablecontent.style.display = "block";
+            }
+
+            // $("#example").dataTable().fnDestroy();
+            var cols = [];
+
+            var exampleRecord = data[0];
+
+            //get keys in object. This will only work if your statement remains true that all objects have identical keys
+            var keys = Object.keys(exampleRecord);
+
+            //for each key, add a column definition
+            keys.forEach(function(k) {
+                if(k ==="eventtime"){
+                    cols.push({
+                    title: k,
+                    data: k,
+                    "render": function (data) {
+                        var d = new Date(data * 1000);
+                        Date.shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        var day = ''+d.getUTCDate();
+                        var minutes = ''+d.getUTCMinutes();
+                        var hours = ''+d.getUTCHours();
+                        var seconds = ''+d.getUTCSeconds();
+                        var milliseconds = ''+d.getUTCMilliseconds();
+                        if (day.length < 2) 
+                            day = '0' + day;
+                        if (minutes.length < 2) 
+                            minutes = '0' + minutes;
+                        if (hours.length < 2) 
+                            hours = '0' + hours;
+                        if (seconds.length < 2) 
+                            seconds = '0' + seconds;
+                        if (milliseconds.length == 1) 
+                            milliseconds = '00' + milliseconds;
+                        else if(milliseconds.length == 2) 
+                            milliseconds = '0' + milliseconds;
+                        return Date.shortMonths[d.getUTCMonth()]+' '+day+' '+hours+':'+minutes+':'+seconds+ '.'+milliseconds;
+                        
+                    }
+                    //optionally do some type detection here for render function
+                    });
+                }else{
+                    cols.push({
+                    title: k,
+                    data: k
+                    //optionally do some type detection here for render function
+                    });
+                }
+            });
+            // alert(cols[0] +" "+ cols[1]);
+
+            //initialize DataTables
+            var table = $('#example').DataTable({
+                destroy: true,
+                columns: cols, 
+                "scrollY": "500px",
+                "scrollCollapse": true,
+                // "pageLength": 100
+                "paging": false
+                
+            });
+            table.clear();
+
+            //add data and draw
+            table.rows.add(data).draw();
+
+        }
+
+        function getDatadogLogs(leadIDVal, xVal, previoustimestamp, errorLog){
+            var todate = new Date(document.getElementById('todt').value);
+            if(previoustimestamp===xVal){
+                previoustimestamp = Date.parse(fromdate);
+            }
+            $.ajax({
+                    type: "GET",
+                    // url: 'datadogLogs?leaduid='+ leadIDVal+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate),
+                    url: 'datadogLogs?leaduid='+ leadIDVal+'&errorlog='+errorLog+'&fromdt='+previoustimestamp+'&todt='+xVal,
+                    dataType: "json",
+                    success: function(data) {
+                        tableFromJson(data);
+                        }
+            });
+        }
+
         function drawlineChart(seriesData, funnelPage) {
             var page = funnelPage;
             chart = Highcharts.chart('container', {
                 chart:{
                     type: 'scatter',
-                    zoomType: 'xy',
-                    events: {
-                        click: function(event) {
-                            clean_tooltip();
-                        }
+                    zoomType: 'xy'
+                    // events: {
+                    //     click: function(event) {
+                    //         clean_tooltip();
+                    //     }
+                    // }
+                },
+                title: {
+                        text: ''
+                },
+                plotOptions: {
+                    scatter: {
+                        marker: {
+                            radius: 5,
+                            states: {
+                                    hover: {
+                                        enabled: true,
+                                        lineColor: 'rgb(255,255,255)'
+                                        }
+                                }
+                            },
+                            states: {
+                                hover: {
+                                    marker: {
+                                        enabled: false
+                                    }
+                                }
+                            }
                     }
+
+                },
+
+                xAxis: {
+                    type: 'datetime',
+                        labels: {
+                            step: 2,
+                            rotation: -45,
+                            formatter: function() {
+                                    return Highcharts.dateFormat('%d %b %y  <br/> %H:%M ', this.value);
+                            }
+                        },
+                        startOnTick: true,
+                        endOnTick: true,
+                        showLastLabel: true,
+                },
+                tooltip: {
+                    stickOnContact: true,
+                    hideDelay: 3000,
+                    useHTML: true,
+                    style: {
+                        pointerEvents: 'auto'
+                    },
+                    formatter: function() {
+                        var fromdate = new Date(document.getElementById('fromdt').value);
+                        var todate = new Date(document.getElementById('todt').value);
+                        day = new Date(this.x);
+                        let series_name = `<b>${this.series.name}</b>`;
+                        var leadHashIDData = this.series.name;
+                        let leadHashID=leadHashIDData;
+                        let points = `${page[this.y]}`;
+                        let total = `${series_name}<br>${points}`;
+                        return total;
+                    },
+                },
+                yAxis: {
+                    title: {
+                        text: 'Funnel Page'
+                    },
+                    categories: funnelPage
+                },
+                series: seriesData
+            });
+        }
+
+        
+
+
+        function drawlineChartInterval(seriesData, funnelPage, funnelmapping) {
+            var page = funnelPage;
+            intervalchart = Highcharts.chart('intervalcontainer', {
+                chart:{
+                    type: 'scatter',
+                    zoomType: 'xy'
                 },
                 title: {
                         text: ''
@@ -179,45 +388,19 @@
                     series: {
                         stickyTracking: false,
                         cursor: 'pointer',
-                        point: {
-                            events: {
-                            click: function () {
-                                clean_tooltip();
-                                
-                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
-                                var orig_container = hc_tooltip[0];
-                                var orig_tooltip = hc_tooltip[1];
-
-                                clone_tooltip = orig_tooltip.cloneNode(true);
-                                clone_tooltip.classList.remove("invisible");
-                                clone_tooltip.classList.add("clone");
-
-                                clone_container = this.series.chart.tooltip.label.element.cloneNode(true);
-                                clone_container.classList.remove("invisible");
-                                clone_container.classList.add("clone");
-
-                                chart.container.firstChild.appendChild(clone_container);
-                                chart.container.appendChild(clone_tooltip);
-                            },
-                            mouseOver: function() {
-                                var orig_tooltip, orig_container;
-                                var hc_tooltip = document.getElementsByClassName("highcharts-tooltip");
-
-                                orig_container = hc_tooltip[0];
-                                orig_tooltip = hc_tooltip[1];
-
-                                if (orig_container && !hasClass(orig_container,"clone")){
-                                orig_container.classList.add("invisible");
-                                }
-
-                                if (orig_tooltip && !hasClass(orig_tooltip,"clone")) {
-                                orig_tooltip.classList.add("invisible");
-                                }
-                            }
-                        
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function() {
+                                var xVal = this.x;
+                                var yVal = this.y;
+                                var seriesData = this.series.name
+                                var pageName = funnelmapping[seriesData][yVal][xVal];
+                                let pageNameVal = pageName["pageName"];
+                                return pageNameVal;
                             }
                         }
                     }
+                    
                 },
 
                 xAxis: {
@@ -235,7 +418,7 @@
                 },
                 tooltip: {
                     stickOnContact: true,
-                    hideDelay: 99999999,
+                    hideDelay: 3000,
                     useHTML: true,
                     style: {
                         pointerEvents: 'auto'
@@ -243,21 +426,36 @@
                     formatter: function() {
                         var fromdate = new Date(document.getElementById('fromdt').value);
                         var todate = new Date(document.getElementById('todt').value);
-                        // var chart = Highcharts.charts[0],
-                        // weekdays = chart.options.lang.weekdays,
                         day = new Date(this.x);
+                        var xVal = this.x;
+                        var yVal = this.y;
+
                         let series_name = `lead_ID: <b>${this.series.name}</b>`;
-                        let points = `${day}, ${page[this.y]}`;
-                        let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
-                        let total = `${points}<br>${link}<br>${series_name}`;
+                        var leadHashIDData = this.series.name;
+                        let leadHashID=leadHashIDData;
+                        let xValue = xVal;
+                        let ytooltip = `TimeElapsed: <b>${yVal}</b> seconds`;
+                        var seriesData = this.series.name
+                        var pageName = funnelmapping[seriesData][yVal][xVal];
+                        let pageNameVal = pageName["pageName"];
+                        let previoustimestamp = pageName["previousTimeStamp"];
+                        let points = `${pageNameVal}`;
+                        let errorLog = false;
+
+                        let link = ' <a href="javascript:getDatadogLogs(\''+leadHashID+'\',\''+xValue+'\',\''+previoustimestamp+'\',\''+errorLog+'\');" >Datadog Logs</a>';
+                        
+                        errorLog = true;
+                        let errorlink = ' <a href="javascript:getDatadogLogs(\''+leadHashID+'\',\''+xValue+'\',\''+previoustimestamp+'\',\''+errorLog+'\');" >Datadog Error Logs</a>';
+                        
+                        let total = `${ytooltip}<br>${points}<br>${link}<br>${errorlink}`;
                         return total;
                     },
                 },
                 yAxis: {
                     title: {
-                        text: 'Funnel Page'
-                    },
-                    categories: funnelPage
+                        text: 'Page Transition Time (seconds)'
+                    }
+                    // categories: funnelPage
                 },
                 series: seriesData
             });

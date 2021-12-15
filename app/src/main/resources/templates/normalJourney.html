@@ -42,7 +42,9 @@
         <div class="col-md-6 mb-3" id="tablecontent" style="display:none">
             <div class="card">
                 <div class="card-header">
-                    <span id="tableHeader"><i class="bi bi-table me-2"></i>Lead Journey Stats</span> 
+                    <span id="tableHeader"><i class="bi bi-table me-2"></i>Lead Journey Stats
+                        <i class="bi bi-info-circle-fill" style="padding-left: 0.5%;" title="To view Unusual Journey data, search with the keyword RED in the datadog search window"></i>
+                    </span> 
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -71,6 +73,27 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-5 mb-3" id="datadogTableContent" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <span id="tableHeader"><i class="bi bi-table me-2"></i>Datadog Logs
+                        
+                    </span> 
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table
+                                id="exampledatadog"
+                                class="table table-striped data-table"
+                                style="width: 100%">
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
         <div class="row" >
             <div class="col-md-12 mb-3" style="height: 60%; display: none;" id="userJourneyGraph" >
                 <div class="card h-100">
@@ -147,6 +170,14 @@
                     var todate = new Date(document.getElementById('todt').value);
                     var lead = rowData['leadID'];
 
+                    document.getElementById("tablecontent").className = document.getElementById("tablecontent").className.replace("col-md-4","col-md-6");
+                    document.getElementById("secondarytablecontent").className = document.getElementById("secondarytablecontent").className.replace("col-md-3","col-md-6");
+                    var datadogtablecontent = document.getElementById("datadogTableContent");
+
+                    if (datadogtablecontent.style.display === "block") {
+                        datadogtablecontent.style.display = "none";
+                    }
+
                     $.ajax({
                     type: "GET",
                     url: "getLeadJourney?fromdate="+Date.parse(fromdate)+"&leadID="+lead,
@@ -154,7 +185,8 @@
                     // dataType: 'json',
                     dataType: "json",
                     success: function(data) {
-                        drawlineChart(data["seriesArray"], data["funnelPage"]);
+
+                        drawlineChart(data["userJourneySeriesData"], data["funnelPage"]);
                         }
                     });
                     newSelection = false;
@@ -187,6 +219,21 @@
                 tablecontent.style.display = "block";
                 
             }
+
+            var datadogtablecontent = document.getElementById("datadogTableContent");
+
+            if (datadogtablecontent.style.display === "block") {
+                datadogtablecontent.style.display = "none";
+            }
+
+            var graphDiv = document.getElementById("userJourneyGraph");
+            if (graphDiv.style.display === "block") {
+                graphDiv.style.display = "none";
+            }
+
+            document.getElementById("tablecontent").className = document.getElementById("tablecontent").className.replace("col-md-4","col-md-6");
+            document.getElementById("secondarytablecontent").className = document.getElementById("secondarytablecontent").className.replace("col-md-3","col-md-6");
+
 
             var divShowData = document.getElementById('tablename');
             var tableName = fromPage +" -> "+toPage;
@@ -228,6 +275,17 @@
 
             if (tablecontent.style.display === "none") {
                 tablecontent.style.display = "block";
+            }
+
+            var datadogtablecontent = document.getElementById("datadogTableContent");
+
+            if (datadogtablecontent.style.display === "block") {
+                datadogtablecontent.style.display = "none";
+            }
+
+            var graphDiv = document.getElementById("userJourneyGraph");
+            if (graphDiv.style.display === "block") {
+                graphDiv.style.display = "none";
             }
 
             // $("#example").dataTable().fnDestroy();
@@ -284,6 +342,82 @@
                 ],
                 "aaSorting": [ [6,'asc'], [7,'asc'] ]
                 
+            });
+            table.clear();
+
+            //add data and draw
+            table.rows.add(data).draw();
+
+        }
+
+
+        function datadogTable(data) {
+
+            var tablecontent = document.getElementById("datadogTableContent");
+
+            if (tablecontent.style.display === "none") {
+                tablecontent.style.display = "block";
+            }
+
+            document.getElementById("tablecontent").className = document.getElementById("tablecontent").className.replace("col-md-6","col-md-4");
+            document.getElementById("secondarytablecontent").className = document.getElementById("secondarytablecontent").className.replace("col-md-6","col-md-3");
+
+            // $("#example").dataTable().fnDestroy();
+            var cols = [];
+
+            var exampleRecord = data[0];
+
+            //get keys in object. This will only work if your statement remains true that all objects have identical keys
+            var keys = Object.keys(exampleRecord);
+
+            //for each key, add a column definition
+            keys.forEach(function(k) {
+                if(k ==="eventtime"){
+                    cols.push({
+                    title: k,
+                    data: k,
+                    "render": function (data) {
+                        var d = new Date(data * 1000);
+                        Date.shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        var day = ''+d.getUTCDate();
+                        var minutes = ''+d.getUTCMinutes();
+                        var hours = ''+d.getUTCHours();
+                        var seconds = ''+d.getUTCSeconds();
+                        var milliseconds = ''+d.getUTCMilliseconds();
+                        if (day.length < 2) 
+                            day = '0' + day;
+                        if (minutes.length < 2) 
+                            minutes = '0' + minutes;
+                        if (hours.length < 2) 
+                            hours = '0' + hours;
+                        if (seconds.length < 2) 
+                            seconds = '0' + seconds;
+                        if (milliseconds.length == 1) 
+                            milliseconds = '00' + milliseconds;
+                        else if(milliseconds.length == 2) 
+                            milliseconds = '0' + milliseconds;
+                        return Date.shortMonths[d.getUTCMonth()]+' '+day+' '+hours+':'+minutes+':'+seconds+ '.'+milliseconds;
+                        
+                    }
+                    //optionally do some type detection here for render function
+                    });
+                }else{
+                    cols.push({
+                    title: k,
+                    data: k
+                    //optionally do some type detection here for render function
+                    });
+                }
+            });
+            // alert(cols[0] +" "+ cols[1]);
+
+            //initialize DataTables
+            var table = $('#exampledatadog').DataTable({
+                destroy: true,
+                columns: cols,
+                "scrollY":        "450px",
+                "scrollCollapse": true,
+                "paging": false             
             });
             table.clear();
 
@@ -355,7 +489,22 @@
         }
 
 
+        function getDatadogLogs(leadIDVal){
+            var fromdate = new Date(document.getElementById('fromdt').value);
+            var todate = new Date(document.getElementById('todt').value);
+            $.ajax({
+                    type: "GET",
+                    url: 'datadogLogs?leaduid='+ leadIDVal+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate),
+                    dataType: "json",
+                    success: function(data) {
+                        datadogTable(data);
+                        }
+            });
+            // alert(leadIDVal);
+        }
+
         function drawlineChart(seriesData, funnelPage) {
+
             var page = funnelPage;
             chart = Highcharts.chart('container', {
                 chart:{
@@ -458,11 +607,19 @@
                         var todate = new Date(document.getElementById('todt').value);
                         day = new Date(this.x);
                         let series_name = `lead_ID: <b>${this.series.name}</b>`;
-                        let points = `${day}, ${page[this.y]}`;
-                        let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
+                        let points = `<b>${page[this.y]}<b>`;
+
+                        var leadHashIDData = this.series.name;
+                        let leadHashID=leadHashIDData;
+                        
+                        // let link = ' <a href="javascript:getDatadogLogs(${leadHashID});" >Datadog Link</a>';
+                        let link = ' <a href="javascript:getDatadogLogs(\''+leadHashID+'\');" >Datadog Error Logs</a>';
+
+
+                        // let link = ' <a href="/datadog?leaduid='+ this.series.name+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >Datadog Link</a>';
                         let fullstorylink = ' <a href="/fullstory?leaduid='+ this.series.name  +'&memberid=&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
 
-                        let total = `${points}<br>${link} ${fullstorylink}<br>${series_name}`;
+                        let total = `${points}<br>${link}<br>${fullstorylink}`;
                         return total;
                     },
                 },

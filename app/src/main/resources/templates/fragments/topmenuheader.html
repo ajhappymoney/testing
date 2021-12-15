@@ -1,17 +1,8 @@
 <header>
-    <!-- <nav class="navbar navbar-light bg-light">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="#">
-            <img src="images/hm.png" alt="" width="30" height="30" class="d-inline-block align-text-top">
-            Happy Money
-          </a>
-        </div>
-    </nav> -->
-    
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="background-color: #1C4E80;">
+    <nav id="navbar_top" class="navbar navbar-expand-lg navbar-light bg-light" style="background-image: url('images/HQ_Chartreuse_2.jpg');" >
         <div class="container-fluid">
             <!-- <img src="images/hm.png" alt="" width="2%" height="3%" class="d-inline-block align-text-top"> -->
-            <a class="navbar-brand" href="#"> <img src="images/hm.png" alt="" width="24" height="24" class="d-inline-block align-text-top"> Production Insights</a>
+            <a class="navbar-brand" href="#"> <img src="images/HQ-logo.png" alt="" width="24" height="24" class="d-inline-block align-text-top"> Production Insights</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
             </button>
@@ -26,5 +17,23 @@
             </div>
         </div>
     </nav>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+  window.addEventListener('scroll', function() {
+      if (window.scrollY > 50) {
+        document.getElementById('navbar_top').classList.add('fixed-top');
+        // add padding top to show content behind navbar
+        navbar_height = document.querySelector('.navbar').offsetHeight;
+        document.body.style.paddingTop = navbar_height + 'px';
+      } else {
+        document.getElementById('navbar_top').classList.remove('fixed-top');
+         // remove padding top from body
+        document.body.style.paddingTop = '0';
+      } 
+  });
+}); 
+
+    </script>
     
 </header>

@@ -3,6 +3,7 @@ package com.happymoney.productionobservability.service;
 import com.google.gson.JsonObject;
 import com.happymoney.productionobservability.adaptor.DatadogAdaptor;
 import com.happymoney.productionobservability.helper.UserJourneyHelper;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,11 @@ public class UserJourneyService {
         }
         return null;
 
+    }
+
+    public JSONArray getDatadogDataTableEntries(String leadGUid, Boolean errorLog, OffsetDateTime fromDate, OffsetDateTime toDate, String requestName){
+        JSONArray datadogRes = datadogAdaptor.getDatadogLogExplorerData(leadGUid, errorLog, fromDate, toDate, requestName);
+        return datadogRes;
     }
 
 
