@@ -128,30 +128,63 @@
 
             if(leadGUid.length<36){
                 alert("Please enter valid leadID");
-            }
-            var splitName = leadGUid.split(",");
-            if(fromdate>todate){
-                alert("Please select proper from and to date");
-            }else if(splitName.length>5){
-                alert("Accepts max 5 leadIds");
+
+                var graphDiv = document.getElementById("journeyGraph");
+                if (graphDiv.style.display === "block") {
+                    graphDiv.style.display = "none";
+                }
+                var intervalGraphDiv = document.getElementById("intervalGraph");
+                if (intervalGraphDiv.style.display === "block") {
+                    intervalGraphDiv.style.display = "none";
+                }
+                var tablecontent = document.getElementById("tablecontent");
+                if (tablecontent.style.display === "block") {
+                    tablecontent.style.display = "none";
+                }
+
             }else{
-                $.ajax({
-                    type: "GET",
-                    url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
-                    dataType: "json",
-                    success: function(data) {     
-                        var graphDiv = document.getElementById("journeyGraph");
-                        if (graphDiv.style.display === "none") {
-                            graphDiv.style.display = "block";
+                var splitName = leadGUid.split(",");
+                if(fromdate>todate){
+                    alert("Please select proper from and to date");
+                }else if(splitName.length>5){
+                    alert("Accepts max 5 leadIds");
+                }else{
+                    $.ajax({
+                        type: "GET",
+                        url: "getUserJourney?leadId="+leadGUid+"&fromdate="+Date.parse(fromdate)+"&todate="+Date.parse(todate),
+                        dataType: "json",
+                        success: function(data) {     
+
+                            if(data["userJourneySeriesData"] && data["userJourneySeriesData"].length>0){
+                                var graphDiv = document.getElementById("journeyGraph");
+                                if (graphDiv.style.display === "none") {
+                                    graphDiv.style.display = "block";
+                                }
+                                drawlineChart(data["userJourneySeriesData"], data["funnelPage"])
+                            }
+
+                            if(data["seriesArray"] && data["seriesArray"].length>0){
+                                var intervalGraphDiv = document.getElementById("intervalGraph");
+                                if (intervalGraphDiv.style.display === "none") {
+                                    intervalGraphDiv.style.display = "block";
+                                }
+                                drawlineChartInterval(data["seriesArray"], data["funnelPage"], data["funnelPageValues"]);
+                            }
+                            
+                            if(!(data["seriesArray"] && data["seriesArray"].length>0) || !(data["seriesArray"] && data["seriesArray"].length>0)){
+                                alert("No User journey or User interval Journey data available. Please check the leadID or selected timeframe");
+                            }
+
+                            var tablecontent = document.getElementById("tablecontent");
+
+                            if (tablecontent.style.display === "block") {
+                                tablecontent.style.display = "none";
+                            }
+                            
+                            
                         }
-                        var intervalGraphDiv = document.getElementById("intervalGraph");
-                        if (intervalGraphDiv.style.display === "none") {
-                            intervalGraphDiv.style.display = "block";
-                        }
-                        drawlineChartInterval(data["seriesArray"], data["funnelPage"], data["funnelPageValues"]);
-                        drawlineChart(data["userJourneySeriesData"], data["funnelPage"])
-                    }
-                    });
+                        });
+                }
             }
 
 
@@ -273,7 +306,12 @@
                     url: 'datadogLogs?leaduid='+ leadIDVal+'&errorlog='+errorLog+'&fromdt='+previoustimestamp+'&todt='+xVal,
                     dataType: "json",
                     success: function(data) {
-                            if ((data === 'undefined') || (data === null) || data.length==0) {
+                            if ((data === undefined) || (data === null) || data.length==0) {
+                                var removeDatatable = document.getElementById("tablecontent");
+
+                                if (removeDatatable.style.display === "block") {
+                                    removeDatatable.style.display = "none";
+                                }
                                 alert("No datadog logs available");
                             }else{
                                 tableFromJson(data);
