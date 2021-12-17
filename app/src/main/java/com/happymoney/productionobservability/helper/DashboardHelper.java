@@ -50,9 +50,6 @@ public class DashboardHelper {
                      profileAttribute = (HashMap<String, Object>) logAttributesHashMap.get("profile");
 
                      String page = (String) profileAttribute.get("page");
-                     if(page=="Name"){
-                         page="error";
-                     }
 
                      if (recentEvents.containsKey(page)) {
                          HashMap<String, Long> leadEvents = recentEvents.get(page);
@@ -116,8 +113,20 @@ public class DashboardHelper {
                      auto.putIfAbsent(key,  random_int);
                      logger.info("requestName:"+requestName+ " Missing funnel page priority map for "+key+" setting the random value "+ random_int);
                  }
+
                  resHashMap.put(auto.get(key), eachPageEvents);
              }
+             for (Map.Entry<String,Integer> pagePriority : auto.entrySet()){
+                 if(!resHashMap.containsKey(pagePriority.getValue())) {
+                     HashMap<String, Object> eachPageEvents = new HashMap<String, Object>();
+                     ArrayList<HashMap<String, Object>> resAttr = new ArrayList<HashMap<String, Object>>();
+                     eachPageEvents.put("count", 0);
+                     eachPageEvents.put("page", pagePriority.getKey());
+                     eachPageEvents.put("resultAttributes", resAttr);
+                     resHashMap.put(pagePriority.getValue(), eachPageEvents);
+                 }
+
+            }
              charData = sortDataHelper.getSortedData(resHashMap);
              return charData;
          }

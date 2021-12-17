@@ -26,6 +26,8 @@ public class UserJourneyHelper {
     public JSONObject getUserJourneyModelAttributes(JsonObject userJourneyResult, String requestName){
         JSONObject userJourneyResObject = new JSONObject();
         JSONArray seriesArray = new JSONArray();
+        JSONArray UserJourneySeriesArray = new JSONArray();
+        JSONObject funnelPageValues = new JSONObject();
 
         List<String> funnelPage = new ArrayList<String>();
 
@@ -38,10 +40,13 @@ public class UserJourneyHelper {
         }
 
         Set<Map.Entry<String, JsonElement>> entrySet = userJourneyResult.entrySet();
+
         for(Map.Entry<String,JsonElement> entry : entrySet){
             JSONObject seriesData = new JSONObject();
+            JSONObject userJourneySeriesData = new JSONObject();
             JsonObject keyvalue = userJourneyResult.getAsJsonObject(entry.getKey());
             seriesData.put("name", entry.getKey());
+            userJourneySeriesData.put("name", entry.getKey());
             HashMap<Long, String> sampleObj = new HashMap<Long, String>();
             for (String key: keyvalue.keySet()
             ) {
@@ -57,29 +62,77 @@ public class UserJourneyHelper {
             // Copy all data from hashMap into TreeMap
             sorted.putAll(sampleObj);
             ArrayList<ArrayList<Object>> sample = new ArrayList<ArrayList<Object>>();
+            ArrayList<ArrayList<Object>> userJourneySample = new ArrayList<ArrayList<Object>>();
             // Display the TreeMap which is naturally sorted
+            Long previousEventTime = 0L;
+            JSONObject funnelPageNames = new JSONObject();
             for (Map.Entry<Long, String> entrytest : sorted.entrySet()){
                 ArrayList<Object> temp = new ArrayList<Object>();
+                ArrayList<Object> userJourneyTemp = new ArrayList<Object>();
+                if(previousEventTime.equals(0L)){
+                    previousEventTime = entrytest.getKey();
+                }
+
                 temp.add(entrytest.getKey());
-                temp.add(funnelPage.indexOf(entrytest.getValue()));
+                userJourneyTemp.add(entrytest.getKey());
+                userJourneyTemp.add(funnelPage.indexOf(entrytest.getValue()));
+
+                Long eventDiff = (entrytest.getKey() - previousEventTime) / 1000;
+                temp.add(eventDiff);
+
+                if(funnelPageNames.containsKey(eventDiff)){
+                    JSONObject funnelData = (JSONObject) funnelPageNames.get(eventDiff);
+                    JSONObject pageInfoObj = new JSONObject();
+                    pageInfoObj.put("pageName", entrytest.getValue());
+                    pageInfoObj.put("previousTimeStamp", previousEventTime);
+
+//                    funnelData.putIfAbsent(entrytest.getKey(), entrytest.getValue());
+                    funnelData.putIfAbsent(entrytest.getKey(), pageInfoObj);
+                    funnelPageNames.put(eventDiff, funnelData);
+                }else{
+                    JSONObject pageInfo = new JSONObject();
+                    JSONObject pageInfoObj = new JSONObject();
+                    pageInfoObj.put("pageName", entrytest.getValue());
+                    pageInfoObj.put("previousTimeStamp", previousEventTime);
+//                    pageInfo.put(entrytest.getKey(), entrytest.getValue());
+                    pageInfo.put(entrytest.getKey(), pageInfoObj);
+                    funnelPageNames.put(eventDiff, pageInfo);
+                }
+
+                previousEventTime = entrytest.getKey();
+
                 sample.add(temp);
+                userJourneySample.add(userJourneyTemp);
             }
 
+            funnelPageValues.put(entry.getKey(),funnelPageNames );
+
             Random obj = new Random();
-            int rand_num = obj.nextInt(0xffffff + 1);
-            String colorCode = String.format("#%06x", rand_num);
+            int randNum = obj.nextInt(0xffffff + 1);
+            String colorCode = String.format("#%06x", randNum);
+
+            Random intervalObj = new Random();
+            int intervalRandNum = intervalObj.nextInt(0xffffff + 1);
+            String intervalColorCode = String.format("#%06x", intervalRandNum);
 
             seriesData.put("data", sample);
             seriesData.put("type","scatter");
             seriesData.put("lineWidth", 1);
             seriesData.put("color", colorCode);
 
+            userJourneySeriesData.put("data", userJourneySample);
+            userJourneySeriesData.put("type","scatter");
+            userJourneySeriesData.put("lineWidth", 1);
+            userJourneySeriesData.put("color", intervalColorCode);
+
             seriesArray.add(seriesData);
+            UserJourneySeriesArray.add(userJourneySeriesData);
 
         }
         userJourneyResObject.put("seriesArray",seriesArray);
+        userJourneyResObject.put("userJourneySeriesData",UserJourneySeriesArray);
         userJourneyResObject.put("funnelPage",funnelPage);
-
+        userJourneyResObject.put("funnelPageValues", funnelPageValues);
         return userJourneyResObject;
     }
 
