@@ -45,7 +45,7 @@
                     Loan Funnel Dashboard<span class="me-2"><i class="bi bi-info-circle-fill" style="padding-left: 0.5%;" title="Displays bar graph of all the leads landing on each funnel page over a selected time slot"></i></span>
                 </div>
                 <div class="card-body">
-                    <div id="salesByType" style="width:100%; height:100%;"></div>
+                    <div id="loanFunnel" style="width:100%; height:100%;"></div>
                 </div>
             </div>
         </div>
@@ -64,6 +64,11 @@
                 style="width: 100%">
                 </table>
               </div>
+            </div>
+            <div class="card-body" id="noData" style="display: none;">
+                <div class="table-responsive">
+                    No leads available
+                </div>
             </div>
           </div>
         </div>
@@ -89,6 +94,9 @@
             document.getElementById('reloadCB').checked = reloadCheckVal;
             var newCustomersVal = [[${newCustomers}]];
             document.getElementById('newCustomers').checked = newCustomersVal;
+
+            var myCheck = [[${myCheck}]];
+            document.getElementById('myCheck').checked = myCheck;
             
             var dash = document.querySelector('#dashboard');
             dash.classList.add('active');
@@ -127,12 +135,21 @@
                 var reloadCheckbox = document.getElementById('reloadCB');
                 var newCustomers = document.getElementById('newCustomers');
 
+                var diff = new Date(fromdate.getTime() - todate.getTime());
+                var diffMS = todate - fromdate;    
+                var diffS = diffMS /60000;    
+
+                var toDateChecked = document.getElementById('myCheck');
+
                 if(fromdate>todate){
                     alert("Please select proper from and to date");
+                }else if(diffS>600){
+                    alert("Please select 10 hour time window to load dashboard data.")
                 }else{
+                    showLoading();
                     $.ajax({
                         type : "GET",
-                        url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate)+"&reloadCheck="+reloadCheckbox.checked+"&newCustomers="+newCustomers.checked,
+                        url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate)+"&reloadCheck="+reloadCheckbox.checked+"&newCustomers="+newCustomers.checked+"&toDateChecked="+toDateChecked.checked,
                         contentType: "application/json",
                         dataType: "html",
                         success: function(data) {     
@@ -188,17 +205,19 @@
                     }
                 });
 
-                drawSalesByTypeChart();
+                drawLoanFunnelChart();
             });
 
             // sconst charts = document.querySelectorAll(".chart");
 
             function tableFromJson(data, profilePage) {
-
+               
                 var tablecontent = document.getElementById("tablecontent");
 
                 var fromdate = new Date(document.getElementById('fromdt').value);
                 var todate = new Date(document.getElementById('todt').value);
+
+                var noDataDiv = document.getElementById("noData");
 
                 if (tablecontent.style.display === "none") {
                     tablecontent.style.display = "block";
@@ -207,128 +226,237 @@
                 var divShowData = document.getElementById('tablename');
                 var camelCaseSplit = profilePage.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
                 divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(camelCaseSplit);
-                
-                // $("#example").dataTable().fnDestroy();
-                var cols = [];
 
-                for (var i = 0; i < data.length; i++) {
-                    var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
-                    // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
+                if(data === null || data.length===0){
+                    
+                    if (noDataDiv.style.display === "none") {
+                        noDataDiv.style.display = "block";
+                    }
+                    if ( $.fn.DataTable.isDataTable('#example') ) {
+                        $('#example').DataTable().clear().destroy();
+                        // $('#example').remove();
                         
-                    // }
-                    var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
-                    var date = new Date(data[i]["eventTime"]);
+                        // $('#Clienttbl').dataTable().fnClearTable();     
+                    }
 
-                    data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
-                    data[i]["datadog link"] = datadoglink;
-                    data[i]["fullstory link"] = fullstorylink;
+                        
+                }else{
+
+                    // $("#example").dataTable().fnDestroy();
+                    var cols = [];
+                    if (noDataDiv.style.display === "block") {
+                        noDataDiv.style.display = "none";
+                    }
+
+                    for (var i = 0; i < data.length; i++) {
+                        var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
+                        // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
+                            
+                        // }
+                        var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
+                        var date = new Date(data[i]["eventTime"]);
+
+                        data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
+                        data[i]["datadog link"] = datadoglink;
+                        data[i]["fullstory link"] = fullstorylink;
+                    }
+                    
+                    var exampleRecord = data[0];
+                    
+                    //get keys in object. This will only work if your statement remains true that all objects have identical keys
+                    var keys = Object.keys(exampleRecord);
+                    
+                    //for each key, add a column definition
+                    keys.forEach(function(k) {
+                        cols.push({
+                        title: k,
+                        data: k
+                        //optionally do some type detection here for render function
+                        });
+                    });
+                    
+                    //initialize DataTables
+                    var table = $('#example').DataTable({
+                        destroy: true,
+                        columns: cols,
+                        
+                    });
+                    table.clear();
+                    
+                    //add data and draw
+                    table.rows.add(data).draw();
                 }
                 
-                var exampleRecord = data[0];
-                
-                //get keys in object. This will only work if your statement remains true that all objects have identical keys
-                var keys = Object.keys(exampleRecord);
-                
-                //for each key, add a column definition
-                keys.forEach(function(k) {
-                    cols.push({
-                    title: k,
-                    data: k
-                    //optionally do some type detection here for render function
-                    });
-                });
-                
-                //initialize DataTables
-                var table = $('#example').DataTable({
-                    destroy: true,
-                    columns: cols,
-                    
-                });
-                table.clear();
-                
-                //add data and draw
-                table.rows.add(data).draw();
-                
             }
 
 
-            function drawSalesByTypeChart() {
+            function drawLoanFunnelChart() {
                 var simpleJsonObject =[[${simpleJsonObject}]];
-                var salesByTypeChart = Highcharts.chart('salesByType', {
-                    chart: {
-                        type: 'column',
-                        marginBottom: 100,
-                        marginTop: 50,
-                        height: 400,
-                    },
-                    title: {
-                        text: ''
-                    },
-                  
-                    plotOptions: {
-                        series: {
-                            cursor: 'pointer',
-                            point: {
-                                events: {
-                                    click: function () {
-                                        tableFromJson(simpleJsonObject[this.category], this.category);
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    xAxis: {
-                        categories: [[${pageNames}]],
-
-                        labels: {
-                            formatter: function() {
-                                var ret = this.value;
-                                // var labelList = ret.split(" ");
-                                var camelCaseSplit = ret.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
-                                // console.log(labelList);
-                                var labelList = camelCaseSplit.split(" ");
-                                var newLabel = "";
-                                for(i=0 ; i<labelList.length;i++){
-                                    if(newLabel===""){
-                                        newLabel = labelList[i]+'<br/>';
-                                    }else{
-                                        newLabel = newLabel + labelList[i]+'<br/>';
-                                    }
-                                }
-                                
-                            return newLabel;
-                            }
-                          },
-                        tickmarkPlacement:'on',
-                    },
-                    yAxis: {
-                        min: 0,
+                if(simpleJsonObject){
+                    var LoanFunnelChart = Highcharts.chart('loanFunnel', {
+                        chart: {
+                            type: 'column',
+                            marginBottom: 100,
+                            marginTop: 50,
+                            height: 400,
+                        },
                         title: {
-                            text: 'number of Leads',
-                            align: 'high'
+                            text: ''
                         },
-                        labels: {
-                            overflow: 'justify'
-                        }
-                    },
-
-                    // series: [[${seriesDataArray}]],
-                    series: [{
-                        name: 'Funnel Landing Page',
-                        data: [[${counterValue}]],
-                        color: '#91E4A6',
-                        states: {
-                            select: {
-                                color: '#449187'
+                    
+                        plotOptions: {
+                            series: {
+                                cursor: 'pointer',
+                                point: {
+                                    events: {
+                                        click: function () {
+                                            tableFromJson(simpleJsonObject[this.category], this.category);
+                                        }
+                                    }
+                                }
                             }
                         },
-                        allowPointSelect: true
-                    }]
+                        xAxis: {
+                            categories: [[${pageNames}]],
 
+                            labels: {
+                                formatter: function() {
+                                    var ret = this.value;
+                                    // var labelList = ret.split(" ");
+                                    var camelCaseSplit = ret.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+                                    // console.log(labelList);
+                                    var labelList = camelCaseSplit.split(" ");
+                                    var newLabel = "";
+                                    for(i=0 ; i<labelList.length;i++){
+                                        if(newLabel===""){
+                                            newLabel = labelList[i]+'<br/>';
+                                        }else{
+                                            newLabel = newLabel + labelList[i]+'<br/>';
+                                        }
+                                    }
+                                    
+                                return newLabel;
+                                }
+                            },
+                            tickmarkPlacement:'on',
+                        },
+                        yAxis: {
+                            min: 0,
+                            title: {
+                                text: 'number of Leads',
+                                align: 'high'
+                            },
+                            labels: {
+                                overflow: 'justify'
+                            }
+                        },
 
-
-                });
+                        // series: [[${seriesDataArray}]],
+                        series: [{
+                            name: 'Funnel Landing Page',
+                            data: [[${counterValue}]],
+                            color: '#91E4A6',
+                            states: {
+                                select: {
+                                    color: '#449187'
+                                }
+                            },
+                            allowPointSelect: true
+                        }]
+                    });
+                }else{
+                    var loanFunnelEmptyDiv = document.getElementById('loanFunnel');
+                    loanFunnelEmptyDiv.innerHTML='<div id="loanFunnel" style="width:100%; height:100%;">No Data Avaliable</div>';
+                }
             }
+
+
+
+            function showLoading() {
+                if (document.getElementById("divLoadingFrame") != null) {
+                    return;
+                }
+                var style = document.createElement("style");
+                style.id = "styleLoading`Window";
+                style.innerHTML = `
+                        .loading-frame {
+                            position: fixed;
+                            background-color: rgba(0, 0, 0, 0.8);
+                            left: 0;
+                            top: 0;
+                            right: 0;
+                            bottom: 0;
+                            z-index: 4;
+                        }
+
+                        .loading-track {
+                            height: 50px;
+                            display: inline-block;
+                            position: absolute;
+                            top: calc(50% - 50px);
+                            left: 50%;
+                        }
+
+                        .loading-dot {
+                            height: 5px;
+                            width: 5px;
+                            background-color: white;
+                            border-radius: 100%;
+                            opacity: 0;
+                        }
+
+                        .loading-dot-animated {
+                            animation-name: loading-dot-animated;
+                            animation-direction: alternate;
+                            animation-duration: .75s;
+                            animation-iteration-count: infinite;
+                            animation-timing-function: ease-in-out;
+                        }
+
+                        @keyframes loading-dot-animated {
+                            from {
+                                opacity: 0;
+                            }
+
+                            to {
+                                opacity: 1;
+                            }
+                        }
+                    `
+                document.body.appendChild(style);
+                var frame = document.createElement("div");
+                frame.id = "divLoadingFrame";
+                frame.classList.add("loading-frame");
+                for (var i = 0; i < 10; i++) {
+                    var track = document.createElement("div");
+                    track.classList.add("loading-track");
+                    var dot = document.createElement("div");
+                    dot.classList.add("loading-dot");
+                    track.style.transform = "rotate(" + String(i * 36) + "deg)";
+                    track.appendChild(dot);
+                    frame.appendChild(track);
+                }
+                document.body.appendChild(frame);
+                var wait = 0;
+                var dots = document.getElementsByClassName("loading-dot");
+                for (var i = 0; i < dots.length; i++) {
+                    window.setTimeout(function(dot) {
+                    dot.classList.add("loading-dot-animated");
+                    }, wait, dots[i]);
+                    wait += 150;
+                }
+                };
+
+                function removeLoading() {
+                document.body.removeChild(document.getElementById("divLoadingFrame"));
+                document.body.removeChild(document.getElementById("styleLoadingWindow"));
+                };
+
+                document.addEventListener('keydown', function(e) {
+                if (e.keyCode === 27) {
+                    removeLoading();
+                }
+                }, false);
 
             /*]]>*/
         </script>

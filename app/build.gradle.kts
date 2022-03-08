@@ -39,6 +39,7 @@ configurations {
 
 //configurations["intTestImplementation"].extendsFrom(configurations.testImplementation.get())
 //configurations["intTestRuntimeOnly"].extendsFrom(configurations.testRuntimeOnly.get())
+ext["log4j2.version"] = "2.17.1"
 
 dependencies {
 	// Platforms
