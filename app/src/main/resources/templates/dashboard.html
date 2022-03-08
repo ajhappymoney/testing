@@ -127,11 +127,18 @@
                     var reloadCheckbox = document.getElementById('reloadCB');
                     var newCustomers = document.getElementById('newCustomers');
 
+                    var diff = new Date(fromdate.getTime() - todate.getTime());
+                    var diffMS = todate - fromdate;    
+                    var diffS = diffMS /60000;    
+
                     var toDateChecked = document.getElementById('myCheck');
 
                     if(fromdate>todate){
                         alert("Please select proper from and to date");
+                    }else if(diffS>600){
+                        alert("Please select 10 hour time window to load dashboard data.")
                     }else{
+                        showLoading();
                         $.ajax({
                             type : "GET",
                             url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate)+"&reloadCheck="+reloadCheckbox.checked+"&newCustomers="+newCustomers.checked+"&toDateChecked="+toDateChecked.checked,
@@ -233,127 +240,214 @@
                             noDataDiv.style.display = "none";
                         }
 
-                    for (var i = 0; i < data.length; i++) {
-                        var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
-                        // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
-                            
-                        // }
-                        var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
-                        var date = new Date(data[i]["eventTime"]);
+                        for (var i = 0; i < data.length; i++) {
+                            var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
+                            // if(!data[i]['member_id'] || /^\s*$/.test(data[i]['member_id'])){
+                                
+                            // }
+                            var fullstorylink = ' <a href="/fullstory?leaduid='+ data[i]['lead_guid']  +'&memberid='+ data[i]['member_id']  +'&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)+'" target="_blank"" >Latest FullStory session</a>';
+                            var date = new Date(data[i]["eventTime"]);
 
-                        data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
-                        data[i]["datadog link"] = datadoglink;
-                        data[i]["fullstory link"] = fullstorylink;
-                    }
-                    
-                    var exampleRecord = data[0];
-                    
-                    //get keys in object. This will only work if your statement remains true that all objects have identical keys
-                    var keys = Object.keys(exampleRecord);
-                    
-                    //for each key, add a column definition
-                    keys.forEach(function(k) {
-                        cols.push({
-                        title: k,
-                        data: k
-                        //optionally do some type detection here for render function
-                        });
-                    });
-                    
-                    //initialize DataTables
-                    var table = $('#example').DataTable({
-                        destroy: true,
-                        columns: cols,
+                            data[i]["eventTime"] = date.toLocaleString("en-US", {timeZoneName: "short"})
+                            data[i]["datadog link"] = datadoglink;
+                            data[i]["fullstory link"] = fullstorylink;
+                        }
                         
-                    });
-                    table.clear();
-                    
-                    //add data and draw
-                    table.rows.add(data).draw();
-                }
+                        var exampleRecord = data[0];
+                        
+                        //get keys in object. This will only work if your statement remains true that all objects have identical keys
+                        var keys = Object.keys(exampleRecord);
+                        
+                        //for each key, add a column definition
+                        keys.forEach(function(k) {
+                            cols.push({
+                            title: k,
+                            data: k
+                            //optionally do some type detection here for render function
+                            });
+                        });
+                        
+                        //initialize DataTables
+                        var table = $('#example').DataTable({
+                            destroy: true,
+                            columns: cols,
+                            
+                        });
+                        table.clear();
+                        
+                        //add data and draw
+                        table.rows.add(data).draw();
+                    }
                 
-            }
-
-
-            function drawLoanFunnelChart() {
-                var simpleJsonObject =[[${simpleJsonObject}]];
-                if(simpleJsonObject){
-                    var LoanFunnelChart = Highcharts.chart('loanFunnel', {
-                        chart: {
-                            type: 'column',
-                            marginBottom: 100,
-                            marginTop: 50,
-                            height: 400,
-                        },
-                        title: {
-                            text: ''
-                        },
-                    
-                        plotOptions: {
-                            series: {
-                                cursor: 'pointer',
-                                point: {
-                                    events: {
-                                        click: function () {
-                                            tableFromJson(simpleJsonObject[this.category], this.category);
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        xAxis: {
-                            categories: [[${pageNames}]],
-
-                            labels: {
-                                formatter: function() {
-                                    var ret = this.value;
-                                    // var labelList = ret.split(" ");
-                                    var camelCaseSplit = ret.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
-                                    // console.log(labelList);
-                                    var labelList = camelCaseSplit.split(" ");
-                                    var newLabel = "";
-                                    for(i=0 ; i<labelList.length;i++){
-                                        if(newLabel===""){
-                                            newLabel = labelList[i]+'<br/>';
-                                        }else{
-                                            newLabel = newLabel + labelList[i]+'<br/>';
-                                        }
-                                    }
-                                    
-                                return newLabel;
-                                }
-                            },
-                            tickmarkPlacement:'on',
-                        },
-                        yAxis: {
-                            min: 0,
-                            title: {
-                                text: 'number of Leads',
-                                align: 'high'
-                            },
-                            labels: {
-                                overflow: 'justify'
-                            }
-                        },
-
-                        // series: [[${seriesDataArray}]],
-                        series: [{
-                            name: 'Funnel Landing Page',
-                            data: [[${counterValue}]],
-                            color: '#91E4A6',
-                            states: {
-                                select: {
-                                    color: '#449187'
-                                }
-                            },
-                            allowPointSelect: true
-                        }]
-                    });
-                }else{
-                    var loanFunnelEmptyDiv = document.getElementById('loanFunnel');
-                    loanFunnelEmptyDiv.innerHTML='<div id="loanFunnel" style="width:100%; height:100%;">No Data Avaliable</div>';
                 }
-            }
+
+
+                function drawLoanFunnelChart() {
+                    var simpleJsonObject =[[${simpleJsonObject}]];
+                    if(simpleJsonObject){
+                        var LoanFunnelChart = Highcharts.chart('loanFunnel', {
+                            chart: {
+                                type: 'column',
+                                marginBottom: 100,
+                                marginTop: 50,
+                                height: 400,
+                            },
+                            title: {
+                                text: ''
+                            },
+                        
+                            plotOptions: {
+                                series: {
+                                    cursor: 'pointer',
+                                    point: {
+                                        events: {
+                                            click: function () {
+                                                tableFromJson(simpleJsonObject[this.category], this.category);
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            xAxis: {
+                                categories: [[${pageNames}]],
+
+                                labels: {
+                                    formatter: function() {
+                                        var ret = this.value;
+                                        // var labelList = ret.split(" ");
+                                        var camelCaseSplit = ret.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+                                        // console.log(labelList);
+                                        var labelList = camelCaseSplit.split(" ");
+                                        var newLabel = "";
+                                        for(i=0 ; i<labelList.length;i++){
+                                            if(newLabel===""){
+                                                newLabel = labelList[i]+'<br/>';
+                                            }else{
+                                                newLabel = newLabel + labelList[i]+'<br/>';
+                                            }
+                                        }
+                                        
+                                    return newLabel;
+                                    }
+                                },
+                                tickmarkPlacement:'on',
+                            },
+                            yAxis: {
+                                min: 0,
+                                title: {
+                                    text: 'number of Leads',
+                                    align: 'high'
+                                },
+                                labels: {
+                                    overflow: 'justify'
+                                }
+                            },
+
+                            // series: [[${seriesDataArray}]],
+                            series: [{
+                                name: 'Funnel Landing Page',
+                                data: [[${counterValue}]],
+                                color: '#91E4A6',
+                                states: {
+                                    select: {
+                                        color: '#449187'
+                                    }
+                                },
+                                allowPointSelect: true
+                            }]
+                        });
+                    }else{
+                        var loanFunnelEmptyDiv = document.getElementById('loanFunnel');
+                        loanFunnelEmptyDiv.innerHTML='<div id="loanFunnel" style="width:100%; height:100%;">No Data Avaliable</div>';
+                    }
+                }
+
+
+                function showLoading() {
+                if (document.getElementById("divLoadingFrame") != null) {
+                    return;
+                }
+                var style = document.createElement("style");
+                style.id = "styleLoading`Window";
+                style.innerHTML = `
+                        .loading-frame {
+                            position: fixed;
+                            background-color: rgba(0, 0, 0, 0.8);
+                            left: 0;
+                            top: 0;
+                            right: 0;
+                            bottom: 0;
+                            z-index: 4;
+                        }
+
+                        .loading-track {
+                            height: 50px;
+                            display: inline-block;
+                            position: absolute;
+                            top: calc(50% - 50px);
+                            left: 50%;
+                        }
+
+                        .loading-dot {
+                            height: 5px;
+                            width: 5px;
+                            background-color: white;
+                            border-radius: 100%;
+                            opacity: 0;
+                        }
+
+                        .loading-dot-animated {
+                            animation-name: loading-dot-animated;
+                            animation-direction: alternate;
+                            animation-duration: .75s;
+                            animation-iteration-count: infinite;
+                            animation-timing-function: ease-in-out;
+                        }
+
+                        @keyframes loading-dot-animated {
+                            from {
+                                opacity: 0;
+                            }
+
+                            to {
+                                opacity: 1;
+                            }
+                        }
+                    `
+                document.body.appendChild(style);
+                var frame = document.createElement("div");
+                frame.id = "divLoadingFrame";
+                frame.classList.add("loading-frame");
+                for (var i = 0; i < 10; i++) {
+                    var track = document.createElement("div");
+                    track.classList.add("loading-track");
+                    var dot = document.createElement("div");
+                    dot.classList.add("loading-dot");
+                    track.style.transform = "rotate(" + String(i * 36) + "deg)";
+                    track.appendChild(dot);
+                    frame.appendChild(track);
+                }
+                document.body.appendChild(frame);
+                var wait = 0;
+                var dots = document.getElementsByClassName("loading-dot");
+                for (var i = 0; i < dots.length; i++) {
+                    window.setTimeout(function(dot) {
+                    dot.classList.add("loading-dot-animated");
+                    }, wait, dots[i]);
+                    wait += 150;
+                }
+                };
+
+                function removeLoading() {
+                document.body.removeChild(document.getElementById("divLoadingFrame"));
+                document.body.removeChild(document.getElementById("styleLoadingWindow"));
+                };
+
+                document.addEventListener('keydown', function(e) {
+                if (e.keyCode === 27) {
+                    removeLoading();
+                }
+                }, false);
 
             /*]]>*/
         </script>
