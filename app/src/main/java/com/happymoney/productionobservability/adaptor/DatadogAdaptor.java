@@ -302,6 +302,7 @@ public class DatadogAdaptor {
                             .pageLimit(pageLimit));
                     finalList = result.getData();
 
+
                     if(pagination) {
                         Integer count = 1;
                         String afterPage = "";
@@ -325,6 +326,11 @@ public class DatadogAdaptor {
                             }
                         }
                         logger.info("requestName:"+requestName+" Number of datadog api calls(pagination):"+ count);
+                    }
+                    if(finalList.size()>0){
+                        logger.info("requestName:"+requestName+" extracted total of "+finalList.size()+" records");
+                    }else{
+                        logger.info("requestName:"+requestName+" Unable to extract any records for the above call");
                     }
                     return finalList;
 

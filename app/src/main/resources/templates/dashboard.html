@@ -37,7 +37,7 @@
                         Loan Funnel Dashboard<span class="me-2"><i class="bi bi-info-circle-fill" style="padding-left: 0.5%;" title="Displays bar graph of all the leads landing on each funnel page over a selected time slot"></i></span>
                     </div>
                     <div class="card-body">
-                        <div id="salesByType" style="width:100%; height:100%;"></div>
+                        <div id="loanFunnel" style="width:100%; height:100%;"></div>
                     </div>
                 </div>
             </div>
@@ -55,6 +55,11 @@
                     class="table table-striped data-table"
                     style="width: 100%">
                     </table>
+                    </div>
+                </div>
+                <div class="card-body" id="noData" style="display: none;">
+                    <div class="table-responsive">
+                        No leads available
                     </div>
                 </div>
                 </div>
@@ -81,6 +86,9 @@
                 document.getElementById('reloadCB').checked = reloadCheckVal;
                 var newCustomersVal = [[${newCustomers}]];
                 document.getElementById('newCustomers').checked = newCustomersVal;
+
+                var myCheck = [[${myCheck}]];
+                document.getElementById('myCheck').checked = myCheck;
                 
                 var dash = document.querySelector('#dashboard');
                 dash.classList.add('active');
@@ -119,12 +127,14 @@
                     var reloadCheckbox = document.getElementById('reloadCB');
                     var newCustomers = document.getElementById('newCustomers');
 
+                    var toDateChecked = document.getElementById('myCheck');
+
                     if(fromdate>todate){
                         alert("Please select proper from and to date");
                     }else{
                         $.ajax({
                             type : "GET",
-                            url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate)+"&reloadCheck="+reloadCheckbox.checked+"&newCustomers="+newCustomers.checked,
+                            url : "chart?fromdt="+Date.parse(fromdate)+"&todt="+Date.parse(todate)+"&reloadCheck="+reloadCheckbox.checked+"&newCustomers="+newCustomers.checked+"&toDateChecked="+toDateChecked.checked,
                             contentType: "application/json",
                             dataType: "html",
                             success: function(data) {     
@@ -180,17 +190,19 @@
                         }
                     });
 
-                    drawSalesByTypeChart();
+                    drawLoanFunnelChart();
                 });
 
                 // sconst charts = document.querySelectorAll(".chart");
 
                 function tableFromJson(data, profilePage) {
-
+                    
                     var tablecontent = document.getElementById("tablecontent");
 
                     var fromdate = new Date(document.getElementById('fromdt').value);
                     var todate = new Date(document.getElementById('todt').value);
+
+                    var noDataDiv = document.getElementById("noData");
 
                     if (tablecontent.style.display === "none") {
                         tablecontent.style.display = "block";
@@ -199,9 +211,27 @@
                     var divShowData = document.getElementById('tablename');
                     var camelCaseSplit = profilePage.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
                     divShowData.innerHTML='<span id="tablename"><i class="bi bi-table me-2"></i></span> '.concat(camelCaseSplit);
-                    
-                    // $("#example").dataTable().fnDestroy();
-                    var cols = [];
+
+                    if(data === null || data.length===0){
+                        
+                        if (noDataDiv.style.display === "none") {
+                            noDataDiv.style.display = "block";
+                        }
+                        if ( $.fn.DataTable.isDataTable('#example') ) {
+                            $('#example').DataTable().clear().destroy();
+                            // $('#example').remove();
+                            
+                            // $('#Clienttbl').dataTable().fnClearTable();     
+                        }
+
+                            
+                    }else{
+
+                        // $("#example").dataTable().fnDestroy();
+                        var cols = [];
+                        if (noDataDiv.style.display === "block") {
+                            noDataDiv.style.display = "none";
+                        }
 
                     for (var i = 0; i < data.length; i++) {
                         var datadoglink = ' <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=false&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog logs for this lead</a><br> <a href="/datadog?leaduid='+ data[i]['lead_guid']+'&errorlog=true&fromdt='+Date.parse(fromdate)+'&todt='+Date.parse(todate)  +'" target="_blank"" >DataDog error logs for this lead</a>';
@@ -240,13 +270,15 @@
                     
                     //add data and draw
                     table.rows.add(data).draw();
-                    
                 }
+                
+            }
 
 
-                function drawSalesByTypeChart() {
-                    var simpleJsonObject =[[${simpleJsonObject}]];
-                    var salesByTypeChart = Highcharts.chart('salesByType', {
+            function drawLoanFunnelChart() {
+                var simpleJsonObject =[[${simpleJsonObject}]];
+                if(simpleJsonObject){
+                    var LoanFunnelChart = Highcharts.chart('loanFunnel', {
                         chart: {
                             type: 'column',
                             marginBottom: 100,
@@ -256,7 +288,7 @@
                         title: {
                             text: ''
                         },
-                        
+                    
                         plotOptions: {
                             series: {
                                 cursor: 'pointer',
@@ -290,7 +322,7 @@
                                     
                                 return newLabel;
                                 }
-                                },
+                            },
                             tickmarkPlacement:'on',
                         },
                         yAxis: {
@@ -316,11 +348,12 @@
                             },
                             allowPointSelect: true
                         }]
-
-
-
                     });
+                }else{
+                    var loanFunnelEmptyDiv = document.getElementById('loanFunnel');
+                    loanFunnelEmptyDiv.innerHTML='<div id="loanFunnel" style="width:100%; height:100%;">No Data Avaliable</div>';
                 }
+            }
 
-                /*]]>*/
-            </script>
+            /*]]>*/
+        </script>

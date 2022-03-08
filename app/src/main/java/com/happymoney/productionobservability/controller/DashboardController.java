@@ -40,7 +40,7 @@ public class DashboardController {
     @RequestMapping(value = "/chart", method=RequestMethod.GET)
     public String chart(@RequestParam(required = false, name = "fromdt") String fromdt, @RequestParam(required = false, name = "todt") String todt,
             @RequestParam(required = false, name = "reloadCheck") Boolean reloadCheck,
-                        @RequestParam(required = false, name = "newCustomers") Boolean newCustomers,
+                        @RequestParam(required = false, name = "newCustomers") Boolean newCustomers, @RequestParam(required = false, name = "toDateChecked") Boolean toDateChecked,
                         Model model) throws ParseException {
 
         Long startTime = processTimeHelper.getStartTime();
@@ -75,7 +75,12 @@ public class DashboardController {
         }
         logger.info("requestName:"+requestName+" Loading dashboard for loan journey from = "+fromDate+" to = "+toDate + " loading new customer data ="+newCustomers);
         JsonObject result = dashboardService.getPageCount(fromDate, toDate, newCustomers, requestName);
-        if(!(result==null)) {
+        model.addAttribute("fromdt", fromDate);
+        model.addAttribute("todt", toDate);
+        model.addAttribute("reloadCheck", reloadCheck);
+        model.addAttribute("newCustomers", newCustomers);
+        model.addAttribute("myCheck", toDateChecked);
+        if(!(result==null || result.size()==0)) {
 
             ArrayList<String> pageNames = new ArrayList<String>();
             ArrayList<Integer> counterValue = new ArrayList<Integer>();
@@ -111,10 +116,7 @@ public class DashboardController {
             model.addAttribute("counterValue", counterValue);
             model.addAttribute("simpleJsonObject", simpleJsonObject);
             model.addAttribute("pageNames", pageNames);
-            model.addAttribute("fromdt", fromDate);
-            model.addAttribute("todt", toDate);
-            model.addAttribute("reloadCheck", reloadCheck);
-            model.addAttribute("newCustomers", newCustomers);
+
         }
         processTimeHelper.printProcessEndTime(startTime, "Load Dashboard");
         if(fromdt==null && todt==null) {
