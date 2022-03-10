@@ -45,6 +45,7 @@ public class DashboardHelper {
                  String leadGUid = (String) logAttributesHashMap.get("lead_guid");
                  if (!(leadGUid == null || leadGUid.length() == 0)) {
                      allGuids.add(leadGUid);
+                 }
                      Long eventTime = (Long) logAttributesHashMap.get("timestamp");
 
                      profileAttribute = (HashMap<String, Object>) logAttributesHashMap.get("profile");
@@ -67,14 +68,14 @@ public class DashboardHelper {
                          }});
 
                      }
-                 }
+//                 }
              }
 
              if(allGuids!=null && allGuids.size()>0) {
                  String guids2 = "";
                  for (String guid :
                          allGuids) {
-                     if (guid.length() < 10) continue;
+                     if (guid.length() < 10 ) continue;
                      guids2 += guid + " OR ";
                  }
                  guids2 = guids2.substring(0, guids2.length() - 4);
@@ -85,24 +86,30 @@ public class DashboardHelper {
 
              HashMap<Integer, HashMap<String, Object>> resHashMap = new HashMap<Integer, HashMap<String, Object>>();
 
+             HashMap<String, Integer> pagesCount = new HashMap<>();
+
              for (String key:recentEvents.keySet()
              ) {
                  HashMap<String, Object> eachPageEvents = new HashMap<String, Object>();
 
                  ArrayList<HashMap<String, Object>> resAttr = new ArrayList<HashMap<String, Object>>();
+                 Integer counter = 0;
                  for (String id: recentEvents.get(key).keySet()
                  ) {
-                     HashMap<String, Object> eachEvent = new HashMap<String, Object>();
-                     eachEvent.put("eventTime", recentEvents.get(key).get(id));
-                     eachEvent.put("lead_guid", id);
-                     if(members!=null && members.has(id)){
-                         eachEvent.put("member_id", members.get(id));
-                     }else{
-                         eachEvent.put("member_id", "");
+                     counter+=1;
+                     if (!(id == null || id.length() == 0)) {
+                         HashMap<String, Object> eachEvent = new HashMap<String, Object>();
+                         eachEvent.put("eventTime", recentEvents.get(key).get(id));
+                         eachEvent.put("lead_guid", id);
+                         if (members != null && members.has(id)) {
+                             eachEvent.put("member_id", members.get(id));
+                         } else {
+                             eachEvent.put("member_id", "");
+                         }
+                         resAttr.add(eachEvent);
                      }
-                     resAttr.add(eachEvent);
                  }
-                 eachPageEvents.put("count", resAttr.size());
+                 eachPageEvents.put("count", counter);
                  eachPageEvents.put("page", key);
                  eachPageEvents.put("resultAttributes", resAttr);
                  if(!auto.containsKey(key)){
