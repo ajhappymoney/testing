@@ -1,0 +1,21 @@
+Configuration:
+  name: Default
+
+  Appenders:
+    Console:
+      name: Console_Appender
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{yyyy-MM-ddTHH:mm:ss.SSS} [%level] [%t] %c{1} - %msg %mdc%n"
+
+  Loggers:
+    Logger:
+      - name: com.happymoney.productionobservability
+        level: debug
+        additivity: false
+        AppenderRef:
+          - ref: Console_Appender
+    Root:
+      level: error
+      AppenderRef:
+        - ref: Console_Appender

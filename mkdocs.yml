@@ -1,0 +1,5 @@
+site_name: production-observability
+nav:
+  - README: ../README.md
+plugins:
+  - techdocs-core
