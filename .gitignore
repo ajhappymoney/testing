@@ -39,3 +39,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local application.yml profile ###
+/app/src/main/resources/application-local.yml
+app/src/main/resources/application.local.yml
