@@ -3,7 +3,7 @@
 **Production Insights** is a new tool which provides easy access to production data. It would be a one stop shop which will centralize all the lead information so developers don’t have to go to different places to monitor the loan funnel.
 
 ## One-Time Setup
-The repo is not ready to run locally immediately after being cloned. From the project root, execute `cp ./app/config/application.local.yml /app/src/main/resources/application-local.yml` to create an active profile for local development. Open the file and fill in the parts of the local configuration that are purposefully kept out of source control. The Engineering Productivity owner should be able to supply these values for you.
+The repo is not ready to run locally immediately after being cloned. From the project root, execute `cp application.local.yml.example ./app/src/main/resources/application-local.yml` to create an active profile for local development. Open the file and fill in the parts of the local configuration that are purposefully kept out of source control. The Engineering Productivity owner should be able to supply these values for you.
 ## Build and Run
 At the top level of the code base, use the gradle wrapper to build and run.
 
