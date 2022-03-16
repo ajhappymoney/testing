@@ -6,6 +6,7 @@ metadata:
     github.com/project-slug: HappyMoneyInc/production-observability
     backstage.io/techdocs-ref: dir:..
     jira/project-key: EP
+    qameta.io/allure-project: default
   links:
     - url: https://github.com/HappyMoneyInc/production-observability
       title: GitHub
