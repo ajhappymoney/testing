@@ -18,6 +18,6 @@ metadata:
       title: Website
       icon: web
 spec:
-  type: website
+  type: service
   lifecycle: experimental
   owner: engineering-productivity-developers
