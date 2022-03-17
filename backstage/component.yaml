@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: production-observability
+  annotations:
+    github.com/project-slug: HappyMoneyInc/production-observability
+    backstage.io/techdocs-ref: dir:..
+    jira/project-key: EP
+  links:
+    - url: https://github.com/HappyMoneyInc/production-observability
+      title: GitHub
+      icon: github
+    - url: https://app.datadoghq.com/apm/service/production-observability-green-envoy
+      title: DataDog Dashboard
+      icon: dashboard
+    - url: https://production-observability.stage.aws-ue1.happymoney.com/chart
+      title: Website
+      icon: web
+spec:
+  type: website
+  lifecycle: experimental
+  owner: engineering-productivity-developers
