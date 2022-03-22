@@ -1,0 +1,7 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: production-observability
+spec:
+  targets:
+    - ./component.yaml
