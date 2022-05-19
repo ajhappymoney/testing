@@ -45,9 +45,9 @@ public class DatadogAdaptor {
         JsonObject charData = new JsonObject();
         String filterQuery;
         if(newCustomers){
-            filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:\"/apply/prequal/birthday\" AND lead_guid)";
+            filterQuery = "service:doppio-apply task_family:doppio-apply_hm-prod (@profile.path:\"/apply/prequal/birthday\" AND lead_guid)";
         }else {
-            filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND lead_guid)";
+            filterQuery = "service:doppio-apply task_family:doppio-apply_hm-prod (@profile.path:* AND lead_guid)";
         }
         Integer pageLimit = 5000;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
@@ -88,7 +88,7 @@ public class DatadogAdaptor {
                     if (counter == 10) {
                         counter = 0;
                         leadsQuery.append(")");
-                        filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND " + leadsQuery.toString() + ")";
+                        filterQuery = "service:doppio-apply task_family:doppio-apply_hm-prod (@profile.path:* AND " + leadsQuery.toString() + ")";
                         List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, false, requestName);
                         finalList.addAll(newCustomerRes);
                         leadsQuery.setLength(0);
@@ -98,7 +98,7 @@ public class DatadogAdaptor {
                 }
                 if (counter != 10) {
                     leadsQuery.append(")");
-                    filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND " + leadsQuery.toString() + ")";
+                    filterQuery = "service:doppio-apply task_family:doppio-apply_hm-prod (@profile.path:* AND " + leadsQuery.toString() + ")";
                     List<Log> newCustomerRes = this.getDatadogResultData(filterQuery, fromDate, toDate, pageLimit, pageCursor, false, requestName);
                     if(finalList.size()==0){
                         finalList = newCustomerRes;
@@ -116,7 +116,7 @@ public class DatadogAdaptor {
 
     public Integer getMemberIdValue(OffsetDateTime fromDate, OffsetDateTime toDate, String guid, String requestName){
 
-        String filterQuery = "task_family:*_prod lead_guid member_id " + guid;
+        String filterQuery = "task_family:*_hm-prod lead_guid member_id " + guid;
         Integer pageLimit = 50;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
 
@@ -195,7 +195,7 @@ public class DatadogAdaptor {
 
     public JsonObject extractUserJourneyInfo(OffsetDateTime fromOffsetDateTime, OffsetDateTime toOffsetDateTime, StringBuffer leadId, String requestName){
         HashMap<String, HashMap<String, ArrayList<Long>>> recentEvents = new HashMap<String, HashMap<String, ArrayList<Long>>>();
-        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND "+leadId.toString()+")";
+        String filterQuery = "service:doppio-apply task_family:doppio-apply_hm-prod (@profile.path:* AND "+leadId.toString()+")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromOffsetDateTime, toOffsetDateTime, pageLimit, pageCursor, false, requestName);
@@ -242,7 +242,7 @@ public class DatadogAdaptor {
 
         JsonObject charData = new JsonObject();
 
-        String filterQuery = "service:doppio-apply task_family:doppio-apply_prod (@profile.path:* AND lead_guid)";
+        String filterQuery = "service:doppio-apply task_family:doppio-apply_hm-prod (@profile.path:* AND lead_guid)";
         Integer pageLimit = 5000;
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
 
@@ -301,7 +301,6 @@ public class DatadogAdaptor {
                             .sort(sort)
                             .pageLimit(pageLimit));
                     finalList = result.getData();
-
 
                     if(pagination) {
                         Integer count = 1;
