@@ -139,7 +139,7 @@ public class DatadogAdaptor {
 
         logger.info("requestName:"+requestName+" Extracting memeber id");
         JsonObject resJsonObject = new JsonObject();
-        String filterQuery = "service:apply-react-prod task_family:*prod @scrubbedMsgLogCopy.member_id:* (" + guids + ")";
+        String filterQuery = "service:apply-react-prod task_family:*prod @data.member_id:* (" + guids + ")";
         String pageCursor = ""; // String | List following results with a cursor provided in the previous query.
         Integer pageLimit = 5000; // Integer | Maximum number of logs in the response.
         List<Log> queryRes = this.getDatadogResultData(filterQuery, fromDate.minusDays(7), toDate, pageLimit, pageCursor, false, requestName + " Extracting member ID data.");
@@ -147,7 +147,7 @@ public class DatadogAdaptor {
             for (Log logmodel :
                     queryRes) {
                 HashMap<String, Object> logAttributesHashMap = new HashMap<String, Object>();
-                logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes().get("scrubbedMsgLogCopy");
+                logAttributesHashMap = (HashMap<String, Object>) ((LogAttributes) logmodel.getAttributes()).getAttributes().get("data");
                 String leadGUid = (String) logAttributesHashMap.get("lead_guid");
                 String memberId = logAttributesHashMap.get("member_id").toString();
                 if (leadGUid == null || memberId == null || resJsonObject.has(leadGUid)) continue;
