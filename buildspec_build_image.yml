@@ -3,8 +3,6 @@ version: 0.2
 env:
   parameter-store:
     NPM_TOKEN: "/devops/build/npmToken"
-    DOCKERHUB_USERNAME: "/devops/build/dockerhubUsername"
-    DOCKERHUB_PASSWORD: "/devops/build/dockerhubPassword"
 
 phases:
   pre_build:
@@ -19,7 +17,6 @@ phases:
       - ./aws/install
       - aws --version
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 730502903637.dkr.ecr.us-east-1.amazonaws.com
-      - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - REPOSITORY_URI=730502903637.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${Service}
       - COMMIT_SHA=$(git rev-parse HEAD || echo $Commit)
       - IMAGE_EXISTS=$(aws ecr describe-images --repository-name=${Service} --image-ids=imageTag=$COMMIT_SHA 2> /dev/null | jq '.imageDetails[0].imageTags[0]' -r)
